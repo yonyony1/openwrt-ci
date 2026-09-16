@@ -339,12 +339,11 @@ fi
 # 清理 PassWall 的 chnlist 规则文件
 # echo "baidu.com"  > package/luci-app-passwall/luci-app-passwall/root/usr/share/passwall/rules/chnlist
 
-# ========== feeds更新后，导入配置，强制关闭ECM ==========
-# 导入你的config文件
-cp "$GITHUB_WORKSPACE/$CONFIG_FILE" .config
-cp "$GITHUB_WORKSPACE/$GENERAL_CONFIG_FILE" general.config
+# ========== 导入配置文件 ==========
+cp "$1" .config
+cp "$2" general.config
 cat general.config >> .config
-# 【关键修复】强制删除ECM=y，禁用ECM模块，避免旧缓存残留
+# 强制删除ECM启用项，防止旧缓存残留编译ECM
 sed -i '/CONFIG_PACKAGE_qca-nss-ecm=y/d' .config
 echo "# CONFIG_PACKAGE_qca-nss-ecm is not set" >> .config
 # 执行make olddefconfig，刷新配置
