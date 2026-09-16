@@ -345,11 +345,6 @@ if package_enabled luci-app-qmodem-next; then
   clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
 
-if package_enabled luci-app-sms-forwarder; then
-  rm -rf feeds/luci/applications/luci-app-sms-forwarder
-  clone_repository https://github.com/4IceG/luci-app-sms-forwarder.git main package/luci-app-sms-forwarder
-fi
-
 # 预置HomeAssistant hass账号与rpcd ACL
 mkdir -p package/base-files/files/usr/share/rpcd/acl.d
 cat > package/base-files/files/usr/share/rpcd/acl.d/hass.json <<EOF
