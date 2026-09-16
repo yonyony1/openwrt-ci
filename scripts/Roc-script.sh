@@ -343,9 +343,11 @@ fi
 cp "$1" .config
 cp "$2" general.config
 cat general.config >> .config
-# 强制删除ECM启用项，防止旧缓存残留编译ECM
-sed -i '/CONFIG_PACKAGE_qca-nss-ecm=y/d' .config
-echo "# CONFIG_PACKAGE_qca-nss-ecm is not set" >> .config
+# 强制移除ECM相关配置，防止编译失败
+sed -i '/CONFIG_PACKAGE_qca-nss-ecm/d' .config
+sed -i '/CONFIG_PACKAGE_qca-nss-ecm-fullcone/d' .config
+echo "CONFIG_PACKAGE_qca-nss-ecm=n" >> .config
+echo "CONFIG_PACKAGE_qca-nss-ecm-fullcone=n" >> .config
 # 执行make olddefconfig，刷新配置
 make defconfig
 
