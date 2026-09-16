@@ -347,7 +347,7 @@ cat general.config >> .config
 sed -i '/CONFIG_PACKAGE_qca-nss-ecm=y/d' .config
 echo "# CONFIG_PACKAGE_qca-nss-ecm is not set" >> .config
 # 执行make olddefconfig，刷新配置
-make olddefconfig
+make defconfig
 
 # ========== 【新增区域】QModem-next + sms-forwarder + hass rpcd配置 ==========
 if package_enabled luci-app-qmodem-next; then
