@@ -340,14 +340,14 @@ fi
 # echo "baidu.com"  > package/luci-app-passwall/luci-app-passwall/root/usr/share/passwall/rules/chnlist
 
 # ========== 【新增区域】QModem-next + sms-forwarder + hass rpcd配置 ==========
-if package_enabled luci-app-qmodem; then
-  rm -rf feeds/luci/applications/luci-app-qmodem
-  clone_repository https://github.com/yonyony1/luci-app-qmodem.git next package/luci-app-qmodem
+if package_enabled luci-app-qmodem-next; then
+  rm -rf feeds/luci/applications/luci-app-qmodem-next
+  clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
 
 if package_enabled luci-app-sms-forwarder; then
   rm -rf feeds/luci/applications/luci-app-sms-forwarder
-  clone_repository https://github.com/yonyony1/luci-app-sms-forwarder.git main package/luci-app-sms-forwarder
+  clone_repository https://github.com/4IceG/luci-app-sms-forwarder.git main package/luci-app-sms-forwarder
 fi
 
 # 预置HomeAssistant hass账号与rpcd ACL
