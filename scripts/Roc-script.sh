@@ -132,9 +132,11 @@ clone_repository() {
 mkdir -p "$(dirname "$THIRD_PARTY_SOURCES_FILE")"
 printf 'Repository\tBranch\tCommit\n' > "$THIRD_PARTY_SOURCES_FILE"
 
-# 修改默认IP & 固件名称 & 编译署名和时间
-sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generate
-sed -i "s/hostname='.*'/hostname='Roc'/g" package/base-files/files/bin/config_generate
+# ========== 【修改这里】反向修改IP：原版192.168.1.1→192.168.2.1，改成192.168.2.1→192.168.1.1 ==========
+sed -i 's/192.168.2.1/192.168.1.1/g' package/base-files/files/bin/config_generate
+# 修改主机名 Roc → SS01
+sed -i "s/hostname='.*'/hostname='SS01'/g" package/base-files/files/bin/config_generate
+
 luci_system_js="feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js"
 firmware_version_anchor="_('Firmware Version'), (L.isObject(boardinfo.release) ? boardinfo.release.description + ' / ' : '') + (luciversion || ''),"
 grep -Fq "$firmware_version_anchor" "$luci_system_js" || { echo "Error: LuCI firmware version anchor was not found in $luci_system_js" >&2; exit 1; }
@@ -305,6 +307,7 @@ if package_enabled luci-app-gecoosac gecoosac; then
   clone_repository https://github.com/laipeng668/luci-app-gecoosac main package/luci-app-gecoosac
 fi
 
+# athena-led 灯控，RE‑SS‑01的config不开启就自动跳过，不需要删除这段代码
 if package_enabled luci-app-athena-led luci-i18n-athena-led-zh-cn; then
   clone_repository https://github.com/NONGFAH/luci-app-athena-led main package/luci-app-athena-led
   chmod +x package/luci-app-athena-led/root/etc/init.d/athena_led package/luci-app-athena-led/root/usr/sbin/athena-led
@@ -335,6 +338,47 @@ fi
 
 # 清理 PassWall 的 chnlist 规则文件
 # echo "baidu.com"  > package/luci-app-passwall/luci-app-passwall/root/usr/share/passwall/rules/chnlist
+
+# ========== 【新增区域】QModem-next + sms-forwarder + hass rpcd配置 ==========
+if package_enabled luci-app-qmodem; then
+  rm -rf feeds/luci/applications/luci-app-qmodem
+  clone_repository https://github.com/yonyony1/luci-app-qmodem.git next package/luci-app-qmodem
+fi
+
+if package_enabled luci-app-sms-forwarder; then
+  rm -rf feeds/luci/applications/luci-app-sms-forwarder
+  clone_repository https://github.com/yonyony1/luci-app-sms-forwarder.git main package/luci-app-sms-forwarder
+fi
+
+# 预置HomeAssistant hass账号与rpcd ACL
+mkdir -p package/base-files/files/usr/share/rpcd/acl.d
+cat > package/base-files/files/usr/share/rpcd/acl.d/hass.json <<EOF
+{
+  "hass": {
+    "description": "HomeAssistant read-only ubus access",
+    "read": {
+      "ubus": {
+        "*": ["*"]
+      },
+      "uci": ["*"]
+    },
+    "write": {}
+  }
+}
+EOF
+
+mkdir -p package/base-files/files/etc/config
+if ! grep -q "hass" package/base-files/files/etc/config/rpcd; then
+cat >> package/base-files/files/etc/config/rpcd <<EOF
+
+config login
+        option username 'hass'
+        option password '\$p\$hass123456'
+        list read '*'
+        list write ''
+EOF
+fi
+# ========== 新增区域结束 ==========
 
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
