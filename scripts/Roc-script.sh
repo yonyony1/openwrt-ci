@@ -339,6 +339,17 @@ fi
 # 清理 PassWall 的 chnlist 规则文件
 # echo "baidu.com"  > package/luci-app-passwall/luci-app-passwall/root/usr/share/passwall/rules/chnlist
 
+# ========== feeds更新后，导入配置，强制关闭ECM ==========
+# 导入你的config文件
+cp "$GITHUB_WORKSPACE/$CONFIG_FILE" .config
+cp "$GITHUB_WORKSPACE/$GENERAL_CONFIG_FILE" general.config
+cat general.config >> .config
+# 【关键修复】强制删除ECM=y，禁用ECM模块，避免旧缓存残留
+sed -i '/CONFIG_PACKAGE_qca-nss-ecm=y/d' .config
+echo "# CONFIG_PACKAGE_qca-nss-ecm is not set" >> .config
+# 执行make olddefconfig，刷新配置
+make olddefconfig
+
 # ========== 【新增区域】QModem-next + sms-forwarder + hass rpcd配置 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
