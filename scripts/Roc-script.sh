@@ -409,39 +409,24 @@ EOF
 sed -i '/NSS_FEATURES +=/a NSS_FEATURES += NSS_RMNET' feeds/nss_packages/qca-nss-drv/Makefile
 sed -i 's/CONFIG_NSS_DRV_DEBUG=y/CONFIG_NSS_DRV_DEBUG=y\nCONFIG_NSS_RMNET=y/' feeds/nss_packages/qca-nss-drv/Makefile
 
-# ===================== NSS-DRV RMNET补丁，修复nss_rmnet_rx_get_ifnum未定义符号 =====================
-echo "===== Apply NSS RMNET symbol export patch ====="
-cat > feeds/nss_packages/qca-nss-drv/patches/0010-enable-rmnet-ipq60xx.patch <<'EOF'
-diff --git a/src/nss_core.c b/src/nss_core.c
+# ===================== ECM FullCone NAT增强补丁【标准完整diff，放在patches目录，编译自动应用】 =====================
+echo "===== Create ECM FullCone patch file ====="
+cat > feeds/nss_packages/qca-nss-ecm/patches/0011-ecm-fullcone.patch <<'EOF'
+diff --git a/ecm_nat.c b/ecm_nat.c
 index xxxxxxx..yyyyyyy 100644
---- a/src/nss_core.c
-+++ b/src/nss_core.c
-@@ -4366,6 +4366,11 @@ EXPORT_SYMBOL(nss_cmn_get_sys_time);
- EXPORT_SYMBOL(nss_drv_get_stats);
- EXPORT_SYMBOL(nss_drv_reset_stats);
+--- a/ecm_nat.c
++++ b/ecm_nat.c
+@@ -1458,8 +1458,8 @@ ecm_nat_xlate_outbound(struct ecm_nat_instance *ni,
+ {
+ 	struct ecm_nat_entry *nat_entry;
 
-+#ifdef CONFIG_NSS_RMNET
-+EXPORT_SYMBOL(nss_rmnet_rx_get_ifnum);
-+EXPORT_SYMBOL(nss_rmnet_tx_get_ifnum);
-+#endif
-+
- /*
-  * nss_drv_module_init()
-  *      Initialize NSS driver module
+-	if (ni->flags & ECM_NAT_INSTANCE_FLAG_FULL_CONE)
+-		nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
++	nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
+
+ 	return true;
+ }
 EOF
-
-# 开启NSS_RMNET编译选项
-sed -i '/NSS_FEATURES +=/a NSS_FEATURES += NSS_RMNET' feeds/nss_packages/qca-nss-drv/Makefile
-sed -i 's/CONFIG_NSS_DRV_DEBUG=y/CONFIG_NSS_DRV_DEBUG=y\nCONFIG_NSS_RMNET=y/' feeds/nss_packages/qca-nss-drv/Makefile
-
-# ===================== ECM FullCone NAT增强（改用sed，不使用patch文件，不会报patch错误） =====================
-echo "===== Enable ECM FullCone via sed ====="
-ECM_SRC="feeds/nss_packages/qca-nss-ecm/src/ecm_nat.c"
-if [ ! -f "${ECM_SRC}" ]; then
-  ECM_SRC="feeds/nss_packages/qca-nss-ecm/ecm_nat.c"
-fi
-sed -i '/return true;/i \
-	nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;' "${ECM_SRC}"
 
 # 清理旧编译stamp缓存，CI编译必须，防止旧缓存导致补丁不生效
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss*
