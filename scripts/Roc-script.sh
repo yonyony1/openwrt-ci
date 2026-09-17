@@ -391,8 +391,7 @@ diff --git a/src/nss_core.c b/src/nss_core.c
 index xxxxxxx..yyyyyyy 100644
 --- a/src/nss_core.c
 +++ b/src/nss_core.c
-@@ -4366,6 +4366,11 @@ EXPORT_SYMBOL(nss_cmn_get_sys_time);
- EXPORT_SYMBOL(nss_drv_get_stats);
+@@ -4366,6 +4366,11 @@ EXPORT_SYMBOL(nss_drv_get_stats);
  EXPORT_SYMBOL(nss_drv_reset_stats);
 
 +#ifdef CONFIG_NSS_RMNET
@@ -409,24 +408,10 @@ EOF
 sed -i '/NSS_FEATURES +=/a NSS_FEATURES += NSS_RMNET' feeds/nss_packages/qca-nss-drv/Makefile
 sed -i 's/CONFIG_NSS_DRV_DEBUG=y/CONFIG_NSS_DRV_DEBUG=y\nCONFIG_NSS_RMNET=y/' feeds/nss_packages/qca-nss-drv/Makefile
 
-# ===================== ECM FullCone NAT增强补丁【标准完整diff，放在patches目录，编译自动应用】 =====================
-echo "===== Create ECM FullCone patch file ====="
-cat > feeds/nss_packages/qca-nss-ecm/patches/0011-ecm-fullcone.patch <<'EOF'
-diff --git a/ecm_nat.c b/ecm_nat.c
-index xxxxxxx..yyyyyyy 100644
---- a/ecm_nat.c
-+++ b/ecm_nat.c
-@@ -1458,8 +1458,8 @@ ecm_nat_xlate_outbound(struct ecm_nat_instance *ni,
- {
- 	struct ecm_nat_entry *nat_entry;
-
--	if (ni->flags & ECM_NAT_INSTANCE_FLAG_FULL_CONE)
--		nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
-+	nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
-
- 	return true;
- }
-EOF
+# ===================== ECM FullCone 方案2：内核模块参数，无需源码补丁 =====================
+echo "===== Setup ECM FullCone via modules.d ====="
+mkdir -p package/base-files/files/etc/modules.d
+echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
 # 清理旧编译stamp缓存，CI编译必须，防止旧缓存导致补丁不生效
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss*
