@@ -348,47 +348,41 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
+# 1. 修改ECM包Makefile关闭ECM_RMNET_SUPPORT（你原有代码）
 # ===================== 强制关闭 ECM RMNET 支持，避免 nss_rmnet_rx_get_ifnum 未定义 =====================
 echo "===== Disable ECM RMNET support in qca-nss-ecm Makefile ====="
-
 ECM_MAKEFILE="feeds/nss_packages/qca-nss-ecm/Makefile"
-
 if [ ! -f "$ECM_MAKEFILE" ]; then
     echo "Error: ECM Makefile not found: $ECM_MAKEFILE" >&2
     exit 1
 fi
-
-# 只移除参数，不删除整行，避免误删其他 ECM 配置
 sed -i -E \
     -e 's/[[:space:]]*ECM_RMNET_SUPPORT[[:space:]]*[:?+]?=[[:space:]]*y[[:space:]]*/ /g' \
     -e 's/[[:space:]]*ECM_INTERFACE_RMNET_ENABLE[[:space:]]*[:?+]?=[[:space:]]*y[[:space:]]*/ /g' \
     "$ECM_MAKEFILE"
-
-# 保险起见，强制改为 n
 sed -i -E \
     's/^[[:space:]]*ECM_RMNET_SUPPORT[[:space:]]*[:?+]?=.*/ECM_RMNET_SUPPORT=n/' \
     "$ECM_MAKEFILE"
 sed -i -E \
     's/^[[:space:]]*ECM_INTERFACE_RMNET_ENABLE[[:space:]]*[:?+]?=.*/ECM_INTERFACE_RMNET_ENABLE=n/' \
     "$ECM_MAKEFILE"
-
 echo "===== ECM RMNET-related lines after fix ====="
 grep -nEi 'RMNET|PKG_MAKE_FLAGS' "$ECM_MAKEFILE" || true
 
-# ===================== 补丁：移除ecm内rmnet相关代码，不再调用nss_rmnet_rx_get_ifnum =====================
+# 2. 原有：只处理ecm_main.c（你原有代码）
 echo "Patching qca-nss-ecm to disable rmnet"
 ECM_SRC="feeds/nss_packages/qca-nss-ecm"
-# 注释#include "ecm_rmnet.h"
 sed -i '/#include "ecm_rmnet.h"/s/^/# /' "$ECM_SRC"/ecm_main.c || true
-# 注释所有ecm_rmnet_函数调用行
 sed -i '/ecm_rmnet_/s/^/# /' "$ECM_SRC"/ecm_main.c || true
-# 删除ecm_rmnet.c编译条目（在包内源码Makefile）
 sed -i '/ecm_rmnet.c/d' "$ECM_SRC"/Makefile
 
-# 进一步检查 ECM 源码里是否仍引用该符号
-if grep -Rni "nss_rmnet_rx_get_ifnum" feeds/nss_packages/qca-nss-ecm 2>/dev/null; then
-    echo "WARNING: qca-nss-ecm still references nss_rmnet_rx_get_ifnum; source-level guard may be required."
-fi
+# 3.【新增补齐】递归全部c/h，清除frontends目录的rmnet代码（方案B核心缺失部分）
+echo "Patching all .c/.h in ECM to remove nss_rmnet_rx_get_ifnum and CONFIG_NSS_RMNET blocks"
+find "$ECM_SRC" -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i '/nss_rmnet_rx_get_ifnum/d' {} \;
+find "$ECM_SRC" -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i '/ecm_rmnet/d' {} \;
+find "$ECM_SRC" -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i '/#ifdef CONFIG_NSS_RMNET/,/#endif/d' {} \;
+echo "==== Check remaining rmnet references ===="
+grep -Rni "nss_rmnet_rx_get_ifnum\|CONFIG_NSS_RMNET" "$ECM_SRC" || echo "No rmnet references found"
 
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
