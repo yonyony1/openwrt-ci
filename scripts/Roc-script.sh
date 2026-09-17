@@ -434,20 +434,14 @@ EOF
 sed -i '/NSS_FEATURES +=/a NSS_FEATURES += NSS_RMNET' feeds/nss_packages/qca-nss-drv/Makefile
 sed -i 's/CONFIG_NSS_DRV_DEBUG=y/CONFIG_NSS_DRV_DEBUG=y\nCONFIG_NSS_RMNET=y/' feeds/nss_packages/qca-nss-drv/Makefile
 
-# ===================== ECM FullCone NAT增强补丁（修复路径错误，适配当前ecm版本） =====================
-echo "===== Apply ECM FullCone NAT patch ====="
-cat > feeds/nss_packages/qca-nss-ecm/patches/0011-ecm-fullcone.patch <<'EOF'
-diff --git a/ecm_nat.c b/ecm_nat.c
---- a/ecm_nat.c
-+++ b/ecm_nat.c
-@@ -1460,6 +1460,2 @@ ecm_nat_xlate_outbound(struct ecm_nat_instance *ni,
- 		nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
- 	}
- 
-+	nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
- 	return true;
- }
-EOF
+# ===================== ECM FullCone NAT增强（改用sed，不使用patch文件，不会报patch错误） =====================
+echo "===== Enable ECM FullCone via sed ====="
+ECM_SRC="feeds/nss_packages/qca-nss-ecm/src/ecm_nat.c"
+if [ ! -f "${ECM_SRC}" ]; then
+  ECM_SRC="feeds/nss_packages/qca-nss-ecm/ecm_nat.c"
+fi
+sed -i '/return true;/i \
+	nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;' "${ECM_SRC}"
 
 # 清理旧编译stamp缓存，CI编译必须，防止旧缓存导致补丁不生效
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss*
