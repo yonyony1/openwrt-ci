@@ -384,8 +384,8 @@ fi
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
-# ===================== 关闭ECM RMNET支持，消除未定义符号 nss_rmnet_rx_get_ifnum =====================
-echo "===== Disable ECM_RMNET_SUPPORT in qca-nss-ecm Makefile ====="
+# ===================== 移除PKG_MAKE_FLAGS中的ECM_RMNET_SUPPORT=y，彻底关闭ECM RMNET代码 =====================
+echo "===== Remove ECM_RMNET_SUPPORT from PKG_MAKE_FLAGS ====="
 sed -i '/ECM_RMNET_SUPPORT=y/d' feeds/nss_packages/qca-nss-ecm/Makefile
 
 # ===================== ECM FullCone：内核模块参数，无需源码补丁 =====================
@@ -393,7 +393,7 @@ echo "===== Setup ECM FullCone via modules.d ====="
 mkdir -p package/base-files/files/etc/modules.d
 echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
-# 清理旧编译stamp缓存，CI编译必须，防止旧缓存导致补丁/编译残留
+# 清理旧编译stamp缓存，CI编译必须，防止旧缓存残留
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss*
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/nss-ifb*
 rm -rf staging_dir/target-aarch64_cortex-a53_musl/stamp/.qca-nss*
