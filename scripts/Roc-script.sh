@@ -351,6 +351,15 @@ cat general.config >> .config
 # ===================== 关闭全局 CONFIG_NSS_RMNET =====================
 echo "===== Disable global CONFIG_NSS_RMNET ====="
 echo "CONFIG_NSS_RMNET=n" >> feeds/nss_packages/config
+# ===================== 补丁：移除ecm内rmnet相关代码，不再调用nss_rmnet_rx_get_ifnum =====================
+echo "Patching qca-nss-ecm to disable rmnet"
+ECM_SRC="feeds/nss_packages/qca-nss-ecm/src"
+# 注释#include "ecm_rmnet.h"
+sed -i '/#include "ecm_rmnet.h"/s/^/# /' "$ECM_SRC"/ecm_main.c || true
+# 注释所有ecm_rmnet_函数调用
+sed -i '/ecm_rmnet_/s/^/# /' "$ECM_SRC"/ecm_main.c || true
+# 删除ecm_rmnet.c编译条目
+sed -i '/ecm_rmnet.c/d' "$ECM_SRC"/Makefile
 
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
