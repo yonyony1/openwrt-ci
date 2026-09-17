@@ -409,18 +409,42 @@ EOF
 sed -i '/NSS_FEATURES +=/a NSS_FEATURES += NSS_RMNET' feeds/nss_packages/qca-nss-drv/Makefile
 sed -i 's/CONFIG_NSS_DRV_DEBUG=y/CONFIG_NSS_DRV_DEBUG=y\nCONFIG_NSS_RMNET=y/' feeds/nss_packages/qca-nss-drv/Makefile
 
-# ===================== ECM FullCone NAT增强补丁（适配NSS12.5 / IPQ60xx / RMNET 5G） =====================
+# ===================== NSS-DRV RMNET补丁，修复nss_rmnet_rx_get_ifnum未定义符号 =====================
+echo "===== Apply NSS RMNET symbol export patch ====="
+cat > feeds/nss_packages/qca-nss-drv/patches/0010-enable-rmnet-ipq60xx.patch <<'EOF'
+diff --git a/src/nss_core.c b/src/nss_core.c
+index xxxxxxx..yyyyyyy 100644
+--- a/src/nss_core.c
++++ b/src/nss_core.c
+@@ -4366,6 +4366,11 @@ EXPORT_SYMBOL(nss_cmn_get_sys_time);
+ EXPORT_SYMBOL(nss_drv_get_stats);
+ EXPORT_SYMBOL(nss_drv_reset_stats);
+
++#ifdef CONFIG_NSS_RMNET
++EXPORT_SYMBOL(nss_rmnet_rx_get_ifnum);
++EXPORT_SYMBOL(nss_rmnet_tx_get_ifnum);
++#endif
++
+ /*
+  * nss_drv_module_init()
+  *      Initialize NSS driver module
+EOF
+
+# 开启NSS_RMNET编译选项
+sed -i '/NSS_FEATURES +=/a NSS_FEATURES += NSS_RMNET' feeds/nss_packages/qca-nss-drv/Makefile
+sed -i 's/CONFIG_NSS_DRV_DEBUG=y/CONFIG_NSS_DRV_DEBUG=y\nCONFIG_NSS_RMNET=y/' feeds/nss_packages/qca-nss-drv/Makefile
+
+# ===================== ECM FullCone NAT增强补丁（修复路径错误，适配当前ecm版本） =====================
 echo "===== Apply ECM FullCone NAT patch ====="
 cat > feeds/nss_packages/qca-nss-ecm/patches/0011-ecm-fullcone.patch <<'EOF'
-diff --git a/src/ecm_nat.c b/src/ecm_nat.c
---- a/src/ecm_nat.c
-+++ b/src/ecm_nat.c
-@@ -1460,6 +1460,9 @@ ecm_nat_xlate_outbound(struct ecm_nat_instance *ni,
+diff --git a/ecm_nat.c b/ecm_nat.c
+--- a/ecm_nat.c
++++ b/ecm_nat.c
+@@ -1460,6 +1460,2 @@ ecm_nat_xlate_outbound(struct ecm_nat_instance *ni,
  		nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
  	}
  
 +	nat_entry->flags |= ECM_NAT_ENTRY_FLAG_FULL_CONE;
-+
  	return true;
  }
 EOF
@@ -429,4 +453,3 @@ EOF
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss*
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/nss-ifb*
 rm -rf staging_dir/target-aarch64_cortex-a53_musl/stamp/.qca-nss*
-
