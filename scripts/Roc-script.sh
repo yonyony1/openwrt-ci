@@ -343,15 +343,25 @@ fi
 cp "$1" .config
 cp "$2" general.config
 cat general.config >> .config
-make defconfig
 
-# ========== 【新增区域】QModem-next + sms-forwarder + hass rpcd配置 ==========
+# ========== 【时序调整】先更新&安装feeds ==========
+./scripts/feeds update -i -a
+./scripts/feeds install -a
+
+# ===================== 关闭全局 CONFIG_NSS_RMNET =====================
+echo "===== Disable global CONFIG_NSS_RMNET ====="
+echo "CONFIG_NSS_RMNET=n" >> feeds/nss_packages/config
+
+# ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
   clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
 
-# 预置HomeAssistant hass账号与rpcd ACL
+# 【现在执行 make defconfig】
+make defconfig
+
+# ========== HASS rpcd ACL（文件注入，放defconfig后完全没问题） ==========
 mkdir -p package/base-files/files/usr/share/rpcd/acl.d
 cat > package/base-files/files/usr/share/rpcd/acl.d/hass.json <<EOF
 {
@@ -379,16 +389,8 @@ config login
         list write ''
 EOF
 fi
-# ========== 新增区域结束 ==========
 
-./scripts/feeds update -i -a
-./scripts/feeds install -a
-
-# ===================== 关闭全局 CONFIG_NSS_RMNET，ECM源码不编译RMNET分支 =====================
-echo "===== Disable global CONFIG_NSS_RMNET ====="
-echo "CONFIG_NSS_RMNET=n" >> feeds/nss_packages/config
-
-# ===================== ECM FullCone =====================
+# ===================== ECM FullCone 文件注入 =====================
 echo "===== Setup ECM FullCone via modules.d ====="
 mkdir -p package/base-files/files/etc/modules.d
 printf '%s\n' 'qca_nss_ecm ecm_fullcone=1' > package/base-files/files/etc/modules.d/99-ecm-fullcone
