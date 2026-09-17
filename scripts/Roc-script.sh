@@ -384,36 +384,16 @@ fi
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
-# ===================== NSS-DRV RMNET补丁，修复nss_rmnet_rx_get_ifnum未定义符号 =====================
-echo "===== Apply NSS RMNET symbol export patch ====="
-cat > feeds/nss_packages/qca-nss-drv/patches/0010-enable-rmnet-ipq60xx.patch <<'EOF'
-diff --git a/src/nss_core.c b/src/nss_core.c
-index xxxxxxx..yyyyyyy 100644
---- a/src/nss_core.c
-+++ b/src/nss_core.c
-@@ -4366,6 +4366,11 @@ EXPORT_SYMBOL(nss_drv_get_stats);
- EXPORT_SYMBOL(nss_drv_reset_stats);
+# ===================== 关闭ECM RMNET支持，消除未定义符号 nss_rmnet_rx_get_ifnum =====================
+echo "===== Disable ECM_RMNET_SUPPORT in qca-nss-ecm Makefile ====="
+sed -i '/ECM_RMNET_SUPPORT=y/d' feeds/nss_packages/qca-nss-ecm/Makefile
 
-+#ifdef CONFIG_NSS_RMNET
-+EXPORT_SYMBOL(nss_rmnet_rx_get_ifnum);
-+EXPORT_SYMBOL(nss_rmnet_tx_get_ifnum);
-+#endif
-+
- /*
-  * nss_drv_module_init()
-  *      Initialize NSS driver module
-EOF
-
-# 开启NSS_RMNET编译选项
-sed -i '/NSS_FEATURES +=/a NSS_FEATURES += NSS_RMNET' feeds/nss_packages/qca-nss-drv/Makefile
-sed -i 's/CONFIG_NSS_DRV_DEBUG=y/CONFIG_NSS_DRV_DEBUG=y\nCONFIG_NSS_RMNET=y/' feeds/nss_packages/qca-nss-drv/Makefile
-
-# ===================== ECM FullCone 方案2：内核模块参数，无需源码补丁 =====================
+# ===================== ECM FullCone：内核模块参数，无需源码补丁 =====================
 echo "===== Setup ECM FullCone via modules.d ====="
 mkdir -p package/base-files/files/etc/modules.d
 echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
-# 清理旧编译stamp缓存，CI编译必须，防止旧缓存导致补丁不生效
+# 清理旧编译stamp缓存，CI编译必须，防止旧缓存导致补丁/编译残留
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss*
 rm -rf build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/nss-ifb*
 rm -rf staging_dir/target-aarch64_cortex-a53_musl/stamp/.qca-nss*
