@@ -384,42 +384,17 @@ fi
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
-# ===================== 移除 PKG_MAKE_FLAGS 中的 ECM_RMNET_SUPPORT=y =====================
-echo "===== Remove ECM_RMNET_SUPPORT from PKG_MAKE_FLAGS ====="
-
-ECM_MAKEFILE="feeds/nss_packages/qca-nss-ecm/Makefile"
-
-if [ ! -f "$ECM_MAKEFILE" ]; then
-    echo "Error: ECM Makefile not found: $ECM_MAKEFILE" >&2
-    exit 1
-fi
-
-echo "Before:"
-grep -nEi 'RMNET|PKG_MAKE_FLAGS' "$ECM_MAKEFILE" || true
-
-# 只移除参数，不删除整行
-sed -i -E \
-    's/[[:space:]]*ECM_RMNET_SUPPORT=y[[:space:]]*/ /g' \
-    "$ECM_MAKEFILE"
-
-echo "After:"
-grep -nEi 'RMNET|PKG_MAKE_FLAGS' "$ECM_MAKEFILE" || true
-
-if grep -q 'ECM_RMNET_SUPPORT=y' "$ECM_MAKEFILE"; then
-    echo "Error: ECM_RMNET_SUPPORT=y is still present" >&2
-    exit 1
-fi
+# ===================== 关闭全局 CONFIG_NSS_RMNET，ECM源码不编译RMNET分支 =====================
+echo "===== Disable global CONFIG_NSS_RMNET ====="
+echo "CONFIG_NSS_RMNET=n" >> feeds/nss_packages/config
 
 # ===================== ECM FullCone =====================
 echo "===== Setup ECM FullCone via modules.d ====="
-
 mkdir -p package/base-files/files/etc/modules.d
-printf '%s\n' 'qca_nss_ecm ecm_fullcone=1' \
-    > package/base-files/files/etc/modules.d/99-ecm-fullcone
+printf '%s\n' 'qca_nss_ecm ecm_fullcone=1' > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
 # ===================== 清理 ECM/NSS 构建缓存 =====================
 echo "===== Clean NSS/ECM build cache ====="
-
 rm -rf \
     build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss* \
     build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/nss-ifb* \
