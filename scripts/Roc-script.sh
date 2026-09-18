@@ -345,8 +345,6 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
-
-
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
@@ -355,6 +353,10 @@ fi
 
 # 【现在执行 make defconfig】
 make defconfig
+
+# ========== 保留12.5 FullCone NAT 开机生效 ==========
+ mkdir -p package/base-files/files/etc/modules.d
+ echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
 # ========== HASS rpcd ACL（文件注入，放defconfig后完全没问题） ==========
 mkdir -p package/base-files/files/usr/share/rpcd/acl.d
