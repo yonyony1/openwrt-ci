@@ -382,15 +382,25 @@ record_git_revision "$NSS_ECM_REPO" "$NSS_ECM_BRANCH" "$NSS_ECM_TMP"
 
 rm -rf "$NSS_ECM_TMP"
 
-# 11.4 ECM 应与 11.4 qca-nss-drv 使用匹配源码，不需要通过 sed 删除假想文件。
+# ===================== 修正 qca-nss-ecm 下载哈希，避免 tar.zst 校验失败 =====================
+# 这是针对 2023.10.20~82b27915 这类 source archive 的 fallback 生成逻辑。
+# 某些分支生成的 tar.zst 与 PKG_MIRROR_HASH / PKG_HASH 不一致，导致校验失败。
+ECM_MAKEFILE="feeds/nss_packages/qca-nss-ecm/Makefile"
 
-echo "===== Verify ECM source ====="
-test -f feeds/nss_packages/qca-nss-ecm/Makefile
+if grep -qE '^[[:space:]]*PKG_MIRROR_HASH[[:space:]]*:=' "$ECM_MAKEFILE"; then
+    sed -i -E \
+        's/^[[:space:]]*PKG_MIRROR_HASH[[:space:]]*:=.*/PKG_MIRROR_HASH:=skip/' \
+        "$ECM_MAKEFILE"
+elif grep -qE '^[[:space:]]*PKG_HASH[[:space:]]*:=' "$ECM_MAKEFILE"; then
+    sed -i -E \
+        's/^[[:space:]]*PKG_HASH[[:space:]]*:=.*/PKG_HASH:=skip/' \
+        "$ECM_MAKEFILE"
+else
+    printf '\nPKG_MIRROR_HASH:=skip\n' >> "$ECM_MAKEFILE"
+fi
 
-grep -Rni "nss_rmnet_rx_get_ifnum" \
-    feeds/nss_packages/qca-nss-ecm \
-    2>/dev/null || true
-
+echo "===== ECM source hash after fix ====="
+grep -nE 'PKG_(MIRROR_)?HASH' "$ECM_MAKEFILE" || true
 
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
