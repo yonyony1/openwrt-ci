@@ -442,18 +442,43 @@ fi
 echo "===== ECM source hash after fix ====="
 grep -nE 'PKG_(MIRROR_)?HASH' "$ECM_MAKEFILE" || true
 
-# 添加下面的 Linux 6.12 兼容处理
-if ! grep -q "Fix ECM asm/unaligned.h for Linux 6.12" "$ECM_MAKEFILE"; then
-    cat >> "$ECM_MAKEFILE" <<'EOF'
+# ===================== 修复旧版 ECM 与 Linux 6.12 的 unaligned 头文件兼容性 =====================
+echo "===== Inject Linux 6.12 unaligned header fix into ECM Build/Compile ====="
 
-# Fix ECM asm/unaligned.h for Linux 6.12
-define Build/Prepare
-	$(call Build/Prepare/Default)
-	find $(PKG_BUILD_DIR) -type f \( -name '*.c' -o -name '*.h' \) \
-		-exec sed -i 's#<asm/unaligned\.h>#<linux/unaligned.h>#g' {} +
-endef
-EOF
+if ! grep -q "Fix ECM asm/unaligned.h before compile" "$ECM_MAKEFILE"; then
+    ECM_MAKEFILE="$ECM_MAKEFILE" python3 - <<'PY'
+from pathlib import Path
+import os
+import sys
+
+path = Path(os.environ["ECM_MAKEFILE"])
+text = path.read_text()
+
+marker = "\t@echo \"Fix ECM asm/unaligned.h before compile\""
+insert = """\\
+\t@echo "Fix ECM asm/unaligned.h before compile"
+\tfind "$(PKG_BUILD_DIR)" -type f \\( -name '*.c' -o -name '*.h' \\) -exec sed -i 's#<asm/unaligned\\.h>#<linux/unaligned.h>#g' {} +
+"""
+
+# 匹配旧版 qca-nss-ecm Makefile 中真正执行内核编译的命令
+target = '\t+$(MAKE) -C "$(LINUX_DIR)"'
+
+if marker in text:
+    sys.exit(0)
+
+if target not in text:
+    print("Error: ECM Build/Compile command was not found", file=sys.stderr)
+    sys.exit(1)
+
+text = text.replace(target, insert + target, 1)
+path.write_text(text)
+PY
 fi
+
+echo "===== Verify ECM Build/Compile header fix ====="
+grep -nA8 -B3 \
+    "Fix ECM asm/unaligned.h before compile" \
+    "$ECM_MAKEFILE" || true
 
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
