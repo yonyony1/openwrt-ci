@@ -372,6 +372,24 @@ fi
 rm -rf feeds/nss_packages/qca-nss-ecm
 cp -a "$NSS_ECM_TMP/qca-nss-ecm" feeds/nss_packages/qca-nss-ecm
 
+# 允许源码包 hash 由 fallback Git archive 生成
+sed -i -E \
+    -e 's/^[[:space:]]*PKG_MIRROR_HASH[[:space:]]*:=.*/PKG_MIRROR_HASH:=skip/' \
+    -e 's/^[[:space:]]*PKG_HASH[[:space:]]*:=.*/PKG_HASH:=skip/' \
+    "$ECM_MAKEFILE"
+
+# 兼容 Linux 6.12 的 missing-prototypes 检查
+echo "===== Relax ECM missing-prototypes warning ====="
+
+if grep -q -- '-Wno-error=unused-function' "$ECM_MAKEFILE"; then
+    sed -i \
+        's/-Wno-error=unused-function[[:space:]]*/-Wno-error=unused-function -Wno-error=missing-prototypes /' \
+        "$ECM_MAKEFILE"
+else
+    printf '\nEXTRA_CFLAGS+= -Wno-error=missing-prototypes\n' \
+        >> "$ECM_MAKEFILE"
+fi
+
 echo "===== qca-nss-ecm source revision ====="
 git -C "$NSS_ECM_TMP" log -1 --oneline
 grep -RniE 'PKG_VERSION|PKG_SOURCE|PKG_SOURCE_VERSION' \
