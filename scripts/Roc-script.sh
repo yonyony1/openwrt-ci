@@ -336,9 +336,6 @@ if package_enabled luci-app-openclash; then
   clone_repository https://github.com/vernesong/OpenClash master package/luci-app-openclash
 fi
 
-# 清理 PassWall 的 chnlist 规则文件
-# echo "baidu.com"  > package/luci-app-passwall/luci-app-passwall/root/usr/share/passwall/rules/chnlist
-
 # ========== 导入配置文件 ==========
 cp "$1" .config
 cp "$2" general.config
@@ -347,42 +344,6 @@ cat general.config >> .config
 # ========== 【时序调整】先更新&安装feeds ==========
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
-
-# 1. 修改ECM包Makefile关闭ECM_RMNET_SUPPORT（你原有代码）
-# ===================== 强制关闭 ECM RMNET 支持，避免 nss_rmnet_rx_get_ifnum 未定义 =====================
-echo "===== Disable ECM RMNET support in qca-nss-ecm Makefile ====="
-ECM_MAKEFILE="feeds/nss_packages/qca-nss-ecm/Makefile"
-if [ ! -f "$ECM_MAKEFILE" ]; then
-    echo "Error: ECM Makefile not found: $ECM_MAKEFILE" >&2
-    exit 1
-fi
-sed -i -E \
-    -e 's/[[:space:]]*ECM_RMNET_SUPPORT[[:space:]]*[:?+]?=[[:space:]]*y[[:space:]]*/ /g' \
-    -e 's/[[:space:]]*ECM_INTERFACE_RMNET_ENABLE[[:space:]]*[:?+]?=[[:space:]]*y[[:space:]]*/ /g' \
-    "$ECM_MAKEFILE"
-sed -i -E \
-    's/^[[:space:]]*ECM_RMNET_SUPPORT[[:space:]]*[:?+]?=.*/ECM_RMNET_SUPPORT=n/' \
-    "$ECM_MAKEFILE"
-sed -i -E \
-    's/^[[:space:]]*ECM_INTERFACE_RMNET_ENABLE[[:space:]]*[:?+]?=.*/ECM_INTERFACE_RMNET_ENABLE=n/' \
-    "$ECM_MAKEFILE"
-echo "===== ECM RMNET-related lines after fix ====="
-grep -nEi 'RMNET|PKG_MAKE_FLAGS' "$ECM_MAKEFILE" || true
-
-# 2. 原有：只处理ecm_main.c（你原有代码）
-echo "Patching qca-nss-ecm to disable rmnet"
-ECM_SRC="feeds/nss_packages/qca-nss-ecm"
-sed -i '/#include "ecm_rmnet.h"/s/^/# /' "$ECM_SRC"/ecm_main.c || true
-sed -i '/ecm_rmnet_/s/^/# /' "$ECM_SRC"/ecm_main.c || true
-sed -i '/ecm_rmnet.c/d' "$ECM_SRC"/Makefile
-
-# 3.【新增补齐】递归全部c/h，清除frontends目录的rmnet代码（方案B核心缺失部分）
-echo "Patching all .c/.h in ECM to remove nss_rmnet_rx_get_ifnum and CONFIG_NSS_RMNET blocks"
-find "$ECM_SRC" -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i '/nss_rmnet_rx_get_ifnum/d' {} \;
-find "$ECM_SRC" -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i '/ecm_rmnet/d' {} \;
-find "$ECM_SRC" -type f \( -name "*.c" -o -name "*.h" \) -exec sed -i '/#ifdef CONFIG_NSS_RMNET/,/#endif/d' {} \;
-echo "==== Check remaining rmnet references ===="
-grep -Rni "nss_rmnet_rx_get_ifnum\|CONFIG_NSS_RMNET" "$ECM_SRC" || echo "No rmnet references found"
 
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
@@ -421,11 +382,6 @@ config login
         list write ''
 EOF
 fi
-
-# ===================== ECM FullCone 文件注入 =====================
-echo "===== Setup ECM FullCone via modules.d ====="
-mkdir -p package/base-files/files/etc/modules.d
-printf '%s\n' 'qca_nss_ecm ecm_fullcone=1' > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
 # ===================== 清理 ECM/NSS 构建缓存 =====================
 echo "===== Clean NSS/ECM build cache ====="
