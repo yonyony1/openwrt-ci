@@ -420,7 +420,7 @@ grep -nE \
     "$ECM_MAKEFILE" || true
 
 # 临时仓库已经完成复制和记录，现在可以删除
-rm -rf "$NSS_ECM_TM
+rm -rf "$NSS_ECM_TMP"
 
 # ===================== 修正 qca-nss-ecm 下载哈希，避免 tar.zst 校验失败 =====================
 # 这是针对 2023.10.20~82b27915 这类 source archive 的 fallback 生成逻辑。
