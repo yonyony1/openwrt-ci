@@ -345,14 +345,14 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
-# ===================== ECM 降级到 NSS 11.4 =====================
-# 当前 qca-nss-drv 为 11.4，不能搭配 ECM 12.5。
-# 使用 qosmio/nss-packages 的 NSS-11.4-K6.1 分支中的 qca-nss-ecm。
+# ===================== ECM 降级到 NSS 11.4-K6.1 =====================
 echo "===== Downgrade qca-nss-ecm to NSS-11.4-K6.1 ====="
 
 NSS_ECM_BRANCH="NSS-11.4-K6.1"
 NSS_ECM_REPO="https://github.com/qosmio/nss-packages.git"
 NSS_ECM_TMP="${WORKSPACE}/.nss-packages-11.4"
+ECM_FEED_DIR="feeds/nss_packages/qca-nss-ecm"
+ECM_MAKEFILE="${ECM_FEED_DIR}/Makefile"
 
 rm -rf "$NSS_ECM_TMP"
 
@@ -365,20 +365,44 @@ git clone \
     "$NSS_ECM_TMP"
 
 if [ ! -d "$NSS_ECM_TMP/qca-nss-ecm" ]; then
-    echo "Error: qca-nss-ecm was not found in branch $NSS_ECM_BRANCH" >&2
+    echo "Error: qca-nss-ecm not found in branch $NSS_ECM_BRANCH" >&2
     exit 1
 fi
 
-rm -rf feeds/nss_packages/qca-nss-ecm
-cp -a "$NSS_ECM_TMP/qca-nss-ecm" feeds/nss_packages/qca-nss-ecm
+rm -rf "$ECM_FEED_DIR"
+cp -a "$NSS_ECM_TMP/qca-nss-ecm" "$ECM_FEED_DIR"
 
-# 允许源码包 hash 由 fallback Git archive 生成
-sed -i -E \
-    -e 's/^[[:space:]]*PKG_MIRROR_HASH[[:space:]]*:=.*/PKG_MIRROR_HASH:=skip/' \
-    -e 's/^[[:space:]]*PKG_HASH[[:space:]]*:=.*/PKG_HASH:=skip/' \
-    "$ECM_MAKEFILE"
+if [ ! -f "$ECM_MAKEFILE" ]; then
+    echo "Error: ECM Makefile not found: $ECM_MAKEFILE" >&2
+    exit 1
+fi
 
-# 兼容 Linux 6.12 的 missing-prototypes 检查
+echo "===== qca-nss-ecm source revision ====="
+git -C "$NSS_ECM_TMP" log -1 --oneline
+
+grep -nE \
+    'PKG_(NAME|VERSION|SOURCE|SOURCE_DATE|SOURCE_VERSION|MIRROR_HASH|HASH)' \
+    "$ECM_MAKEFILE" || true
+
+# 记录第三方源码版本。必须在删除临时仓库前执行。
+record_git_revision "$NSS_ECM_REPO" "$NSS_ECM_BRANCH" "$NSS_ECM_TMP"
+
+# ===================== 跳过旧源码包 hash 校验 =====================
+echo "===== Disable qca-nss-ecm source archive hash check ====="
+
+if grep -qE '^[[:space:]]*PKG_MIRROR_HASH[[:space:]]*:=' "$ECM_MAKEFILE"; then
+    sed -i -E \
+        's/^[[:space:]]*PKG_MIRROR_HASH[[:space:]]*:=.*/PKG_MIRROR_HASH:=skip/' \
+        "$ECM_MAKEFILE"
+elif grep -qE '^[[:space:]]*PKG_HASH[[:space:]]*:=' "$ECM_MAKEFILE"; then
+    sed -i -E \
+        's/^[[:space:]]*PKG_HASH[[:space:]]*:=.*/PKG_HASH:=skip/' \
+        "$ECM_MAKEFILE"
+else
+    printf '\nPKG_MIRROR_HASH:=skip\n' >> "$ECM_MAKEFILE"
+fi
+
+# ===================== 兼容 Linux 6.12 =====================
 echo "===== Relax ECM missing-prototypes warning ====="
 
 if grep -q -- '-Wno-error=unused-function' "$ECM_MAKEFILE"; then
@@ -390,15 +414,13 @@ else
         >> "$ECM_MAKEFILE"
 fi
 
-echo "===== qca-nss-ecm source revision ====="
-git -C "$NSS_ECM_TMP" log -1 --oneline
-grep -RniE 'PKG_VERSION|PKG_SOURCE|PKG_SOURCE_VERSION' \
-    feeds/nss_packages/qca-nss-ecm/Makefile || true
+echo "===== Verify qca-nss-ecm Makefile ====="
+grep -nE \
+    'PKG_(MIRROR_)?HASH|EXTRA_CFLAGS|missing-prototypes|unused-function' \
+    "$ECM_MAKEFILE" || true
 
-# 记录实际使用的第三方源码版本
-record_git_revision "$NSS_ECM_REPO" "$NSS_ECM_BRANCH" "$NSS_ECM_TMP"
-
-rm -rf "$NSS_ECM_TMP"
+# 临时仓库已经完成复制和记录，现在可以删除
+rm -rf "$NSS_ECM_TM
 
 # ===================== 修正 qca-nss-ecm 下载哈希，避免 tar.zst 校验失败 =====================
 # 这是针对 2023.10.20~82b27915 这类 source archive 的 fallback 生成逻辑。
