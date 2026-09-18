@@ -345,6 +345,53 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
+# ===================== ECM 降级到 NSS 11.4 =====================
+# 当前 qca-nss-drv 为 11.4，不能搭配 ECM 12.5。
+# 使用 qosmio/nss-packages 的 NSS-11.4-K6.1 分支中的 qca-nss-ecm。
+echo "===== Downgrade qca-nss-ecm to NSS-11.4-K6.1 ====="
+
+NSS_ECM_BRANCH="NSS-11.4-K6.1"
+NSS_ECM_REPO="https://github.com/qosmio/nss-packages.git"
+NSS_ECM_TMP="${WORKSPACE}/.nss-packages-11.4"
+
+rm -rf "$NSS_ECM_TMP"
+
+git clone \
+    --depth=1 \
+    --no-tags \
+    --single-branch \
+    --branch "$NSS_ECM_BRANCH" \
+    "$NSS_ECM_REPO" \
+    "$NSS_ECM_TMP"
+
+if [ ! -d "$NSS_ECM_TMP/qca-nss-ecm" ]; then
+    echo "Error: qca-nss-ecm was not found in branch $NSS_ECM_BRANCH" >&2
+    exit 1
+fi
+
+rm -rf feeds/nss_packages/qca-nss-ecm
+cp -a "$NSS_ECM_TMP/qca-nss-ecm" feeds/nss_packages/qca-nss-ecm
+
+echo "===== qca-nss-ecm source revision ====="
+git -C "$NSS_ECM_TMP" log -1 --oneline
+grep -RniE 'PKG_VERSION|PKG_SOURCE|PKG_SOURCE_VERSION' \
+    feeds/nss_packages/qca-nss-ecm/Makefile || true
+
+# 记录实际使用的第三方源码版本
+record_git_revision "$NSS_ECM_REPO" "$NSS_ECM_BRANCH" "$NSS_ECM_TMP"
+
+rm -rf "$NSS_ECM_TMP"
+
+# 11.4 ECM 应与 11.4 qca-nss-drv 使用匹配源码，不需要通过 sed 删除假想文件。
+
+echo "===== Verify ECM source ====="
+test -f feeds/nss_packages/qca-nss-ecm/Makefile
+
+grep -Rni "nss_rmnet_rx_get_ifnum" \
+    feeds/nss_packages/qca-nss-ecm \
+    2>/dev/null || true
+
+
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
