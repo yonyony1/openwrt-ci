@@ -442,6 +442,19 @@ fi
 echo "===== ECM source hash after fix ====="
 grep -nE 'PKG_(MIRROR_)?HASH' "$ECM_MAKEFILE" || true
 
+# 添加下面的 Linux 6.12 兼容处理
+if ! grep -q "Fix ECM asm/unaligned.h for Linux 6.12" "$ECM_MAKEFILE"; then
+    cat >> "$ECM_MAKEFILE" <<'EOF'
+
+# Fix ECM asm/unaligned.h for Linux 6.12
+define Build/Prepare
+	$(call Build/Prepare/Default)
+	find $(PKG_BUILD_DIR) -type f \( -name '*.c' -o -name '*.h' \) \
+		-exec sed -i 's#<asm/unaligned\.h>#<linux/unaligned.h>#g' {} +
+endef
+EOF
+fi
+
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
