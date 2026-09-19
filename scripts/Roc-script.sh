@@ -345,6 +345,63 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
+# ===================== 检查 qca-nss-drv RMNET 符号 =====================
+echo "===== Check qca-nss-drv RMNET symbol ====="
+
+NSS_DRV_DIR="feeds/nss_packages/qca-nss-drv"
+
+if [ ! -d "$NSS_DRV_DIR" ]; then
+    echo "Error: qca-nss-drv directory not found: $NSS_DRV_DIR" >&2
+    exit 1
+fi
+
+echo "===== qca-nss-drv source files ====="
+find "$NSS_DRV_DIR" -type f \
+    \( -name 'nss_rmnet_rx.c' -o -name 'nss_rmnet_rx.h' -o -name 'Makefile' \) \
+    -print
+
+echo "===== nss_rmnet_rx_get_ifnum references ====="
+grep -Rni --include='*.c' --include='*.h' \
+    'nss_rmnet_rx_get_ifnum' \
+    "$NSS_DRV_DIR" || true
+
+echo "===== qca-nss-drv version ====="
+grep -RniE \
+    'PKG_(NAME|VERSION|RELEASE|SOURCE_DATE|SOURCE_VERSION|SOURCE)' \
+    "$NSS_DRV_DIR" \
+    2>/dev/null || true
+
+# ===================== 确保 qca-nss-drv 导出 RMNET 符号 =====================
+echo "===== Ensure qca-nss-drv exports nss_rmnet_rx_get_ifnum ====="
+
+RMNET_C_FILE="$(find "$NSS_DRV_DIR" -type f -name 'nss_rmnet_rx.c' -print -quit)"
+
+if [ -z "$RMNET_C_FILE" ]; then
+    echo "Error: nss_rmnet_rx.c was not found; cannot force-export symbol" >&2
+    exit 1
+fi
+
+if ! grep -q 'int32_t[[:space:]]\+nss_rmnet_rx_get_ifnum' "$RMNET_C_FILE"; then
+    echo "Error: nss_rmnet_rx_get_ifnum implementation is missing in $RMNET_C_FILE" >&2
+    echo "Use a qca-nss-drv version that contains the RMNET API." >&2
+    exit 1
+fi
+
+if ! grep -q 'EXPORT_SYMBOL(nss_rmnet_rx_get_ifnum)' "$RMNET_C_FILE"; then
+    cat >> "$RMNET_C_FILE" <<'EOF'
+
+/*
+ * Compatibility export for qca-nss-ecm.
+ */
+EXPORT_SYMBOL(nss_rmnet_rx_get_ifnum);
+EOF
+fi
+
+echo "===== qca-nss-drv RMNET export check ====="
+grep -nA5 -B5 \
+    'nss_rmnet_rx_get_ifnum' \
+    "$RMNET_C_FILE"
+
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
