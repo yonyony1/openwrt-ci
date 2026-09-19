@@ -345,6 +345,13 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
+# ===================== 清理 ECM/NSS 构建缓存【挪到这里！！】=====================
+echo "===== Clean NSS/ECM build cache ====="
+rm -rf \
+    build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss* \
+    build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/nss-ifb* \
+    staging_dir/target-aarch64_cortex-a53_musl/stamp/.qca-nss*
+
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
@@ -388,10 +395,10 @@ grep -rn "rmnet\|nss_rmnet" "$ECM_BUILD" || echo "✅ 无任何RMNET残留，补
 
 
 # ========== 保留12.5 FullCone NAT 开机生效 ==========
- mkdir -p package/base-files/files/etc/modules.d
- echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
+mkdir -p package/base-files/files/etc/modules.d
+echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
-# ========== HASS rpcd ACL（文件注入，放defconfig后完全没问题） ==========
+# ========== HASS rpcd ACL ==========
 mkdir -p package/base-files/files/usr/share/rpcd/acl.d
 cat > package/base-files/files/usr/share/rpcd/acl.d/hass.json <<EOF
 {
@@ -419,10 +426,3 @@ config login
         list write ''
 EOF
 fi
-
-# ===================== 清理 ECM/NSS 构建缓存 =====================
-echo "===== Clean NSS/ECM build cache ====="
-rm -rf \
-    build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss* \
-    build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/nss-ifb* \
-    staging_dir/target-aarch64_cortex-a53_musl/stamp/.qca-nss*
