@@ -238,7 +238,12 @@ jobs:
     - name: Update Feeds(更新feeds)
       run: |
         cd "$OPENWRT_PATH"
+        # 追加 nss_packages wwan分支，提供kmod-qca-nss-rmnet
+        echo "src-git nss_packages https://github.com/qosmio/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
+        # 如果想使用xhikarishii修复版RMNET，注释上一行，启用下面这行
+        # echo "src-git nss_packages https://github.com/xhikarishii/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
         ./scripts/feeds update -a
+        ./scripts/feeds install -a
 
     - name: Load Custom Configuration(加载自定义配置)
       env:
