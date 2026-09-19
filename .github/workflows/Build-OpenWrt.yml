@@ -235,6 +235,15 @@ jobs:
             ${{ env.STAGING_FALLBACK_PREFIX }}
           path: ${{ env.OPENWRT_PATH }}/staging_dir
 
+      - name: Update Feeds(更新feeds)
+        run: |
+          cd "$OPENWRT_PATH"
+          sed -i '/^src-git nss_packages/d' feeds.conf.default
+          echo "src-git nss_packages https://github.com/xhikarishii/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
+          ./scripts/feeds update -a
+          ./scripts/feeds install -a
+          make defconfig
+
       - name: Load Custom Configuration(加载自定义配置)
         env:
           CONFIG_FILE: ${{ inputs.config_file }}
@@ -248,20 +257,12 @@ jobs:
           echo "==== Check selected packages ===="
           grep -E "CONFIG_PACKAGE_qca-nss-rmnet|CONFIG_PACKAGE_luci-app-qmodem|CONFIG_PACKAGE_sqm-scripts-nss" .config || true
 
-      - name: Update Feeds(更新feeds)
-        run: |
-          cd "$OPENWRT_PATH"
-          sed -i '/^src-git nss_packages/d' feeds.conf.default
-          echo "src-git nss_packages https://github.com/xhikarishii/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-          make defconfig
-
       - name: Download DL Package(下载DL软件包)
         env:
           CONFIG_FILE: ${{ inputs.config_file }}
         run: |
-          cat "$GITHUB_WORKSPACE/$CONFIG_FILE" "$GITHUB_WORKSPACE/$GENERAL_CONFIG_FILE" > "$OPENWRT_PATH/.config"
+          # 【重要】如果Roc脚本修改.config，注释下面这一行！
+          # cat "$GITHUB_WORKSPACE/$CONFIG_FILE" "$GITHUB_WORKSPACE/$GENERAL_CONFIG_FILE" > "$OPENWRT_PATH/.config"
           cd "$OPENWRT_PATH"
           if [ "${{ inputs.remove_sqm_scripts_nss }}" = "true" ]; then
             sed -i '/CONFIG_PACKAGE_sqm-scripts-nss=y/d' .config
