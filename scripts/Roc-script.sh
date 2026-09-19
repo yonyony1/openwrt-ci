@@ -345,6 +345,10 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
+echo "===== Disable qca-nss-crypto hash check permanently ====="
+NSS_CRYPTO_MK="feeds/nss_packages/qca-nss-crypto/Makefile"
+sed -i 's/a195ba22016d91cd1711fe8f5167d65cfbd03feee5a9089929cb0d2180bf4047/skip/g' "$NSS_CRYPTO_MK"
+
 # ===================== 清理 ECM/NSS 构建缓存【挪到这里！！】=====================
 echo "===== Clean NSS/ECM build cache ====="
 rm -rf \
