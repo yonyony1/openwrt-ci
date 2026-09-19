@@ -354,32 +354,38 @@ fi
 # 【现在执行 make defconfig】
 make defconfig
 
-# ========== 【核心关键】提前解压NSS-ECM源码到build_dir（必须步骤！） ==========
+# ========== 12.5专属：彻底阉割RMNET，根治 nss_rmnet_rx_get_ifnum 未定义 ==========
 make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
 
-# ========== 12.5专属：彻底阉割RMNET，根治 nss_rmnet_rx_get_ifnum 未定义 ==========
-ECM_BUILD=$(find build_dir -maxdepth 1 -type d -name "qca-nss-ecm-*")
+# 修正find：在build_dir下递归查找ecm源码目录
+ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1)
 echo "ECM Build Path: $ECM_BUILD"
 
+if [ -z "$ECM_BUILD" ] || [ ! -d "$ECM_BUILD" ]; then
+    echo "ERROR: Cannot find qca-nss-ecm build directory!" >&2
+    exit 1
+fi
+
 # 1. 关闭ECM层RMNET编译开关
-sed -i 's/ECM_RMNET_SUPPORT=y/ECM_RMNET_SUPPORT=n/g' $ECM_BUILD/Makefile
-sed -i 's/ECM_INTERFACE_RMNET_ENABLE=y/ECM_INTERFACE_RMNET_ENABLE=n/g' $ECM_BUILD/Makefile
+sed -i 's/ECM_RMNET_SUPPORT=y/ECM_RMNET_SUPPORT=n/g' "$ECM_BUILD"/Makefile
+sed -i 's/ECM_INTERFACE_RMNET_ENABLE=y/ECM_INTERFACE_RMNET_ENABLE=n/g' "$ECM_BUILD"/Makefile
 
 # 2. 删除所有RMNET源码文件
-rm -f $ECM_BUILD/ecm_rmnet.c $ECM_BUILD/ecm_rmnet.h
+rm -f "$ECM_BUILD"/ecm_rmnet.c "$ECM_BUILD"/ecm_rmnet.h
 
 # 3. 全局递归清除所有残留符号引用（含frontends子目录）
-find $ECM_BUILD -type f \( -name "*.c" -o -name "*.h" \) | xargs -r sed -i \
+find "$ECM_BUILD" -type f \( -name "*.c" -o -name "*.h" \) | xargs -r sed -i \
 -e '/nss_rmnet_rx_get_ifnum/d' \
 -e '/ecm_rmnet/d' \
 -e '/CONFIG_NSS_RMNET/,/#endif/d'
 
 # 4. 清除编译列表
-sed -i '/ecm_rmnet/d' $ECM_BUILD/Makefile
+sed -i '/ecm_rmnet/d' "$ECM_BUILD"/Makefile
 
 # 5. 最终校验（无输出=彻底干净）
 echo "===== 校验RMNET残留 ====="
-grep -rn "rmnet\|nss_rmnet" $ECM_BUILD || echo "✅ 无任何RMNET残留，补丁成功"
+grep -rn "rmnet\|nss_rmnet" "$ECM_BUILD" || echo "✅ 无任何RMNET残留，补丁成功"
+
 
 # ========== 保留12.5 FullCone NAT 开机生效 ==========
  mkdir -p package/base-files/files/etc/modules.d
