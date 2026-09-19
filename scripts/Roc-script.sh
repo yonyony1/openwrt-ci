@@ -345,63 +345,6 @@ cat general.config >> .config
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
-# ===================== 检查 qca-nss-drv RMNET 符号 =====================
-echo "===== Check qca-nss-drv RMNET symbol ====="
-
-NSS_DRV_DIR="feeds/nss_packages/qca-nss-drv"
-
-if [ ! -d "$NSS_DRV_DIR" ]; then
-    echo "Error: qca-nss-drv directory not found: $NSS_DRV_DIR" >&2
-    exit 1
-fi
-
-echo "===== qca-nss-drv source files ====="
-find "$NSS_DRV_DIR" -type f \
-    \( -name 'nss_rmnet_rx.c' -o -name 'nss_rmnet_rx.h' -o -name 'Makefile' \) \
-    -print
-
-echo "===== nss_rmnet_rx_get_ifnum references ====="
-grep -Rni --include='*.c' --include='*.h' \
-    'nss_rmnet_rx_get_ifnum' \
-    "$NSS_DRV_DIR" || true
-
-echo "===== qca-nss-drv version ====="
-grep -RniE \
-    'PKG_(NAME|VERSION|RELEASE|SOURCE_DATE|SOURCE_VERSION|SOURCE)' \
-    "$NSS_DRV_DIR" \
-    2>/dev/null || true
-
-# ===================== 确保 qca-nss-drv 导出 RMNET 符号 =====================
-echo "===== Ensure qca-nss-drv exports nss_rmnet_rx_get_ifnum ====="
-
-RMNET_C_FILE="$(find "$NSS_DRV_DIR" -type f -name 'nss_rmnet_rx.c' -print -quit)"
-
-if [ -z "$RMNET_C_FILE" ]; then
-    echo "Error: nss_rmnet_rx.c was not found; cannot force-export symbol" >&2
-    exit 1
-fi
-
-if ! grep -q 'int32_t[[:space:]]\+nss_rmnet_rx_get_ifnum' "$RMNET_C_FILE"; then
-    echo "Error: nss_rmnet_rx_get_ifnum implementation is missing in $RMNET_C_FILE" >&2
-    echo "Use a qca-nss-drv version that contains the RMNET API." >&2
-    exit 1
-fi
-
-if ! grep -q 'EXPORT_SYMBOL(nss_rmnet_rx_get_ifnum)' "$RMNET_C_FILE"; then
-    cat >> "$RMNET_C_FILE" <<'EOF'
-
-/*
- * Compatibility export for qca-nss-ecm.
- */
-EXPORT_SYMBOL(nss_rmnet_rx_get_ifnum);
-EOF
-fi
-
-echo "===== qca-nss-drv RMNET export check ====="
-grep -nA5 -B5 \
-    'nss_rmnet_rx_get_ifnum' \
-    "$RMNET_C_FILE"
-
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
@@ -410,6 +353,33 @@ fi
 
 # 【现在执行 make defconfig】
 make defconfig
+
+# ========== 【核心关键】提前解压NSS-ECM源码到build_dir（必须步骤！） ==========
+make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
+
+# ========== 12.5专属：彻底阉割RMNET，根治 nss_rmnet_rx_get_ifnum 未定义 ==========
+ECM_BUILD=$(find build_dir -maxdepth 1 -type d -name "qca-nss-ecm-*")
+echo "ECM Build Path: $ECM_BUILD"
+
+# 1. 关闭ECM层RMNET编译开关
+sed -i 's/ECM_RMNET_SUPPORT=y/ECM_RMNET_SUPPORT=n/g' $ECM_BUILD/Makefile
+sed -i 's/ECM_INTERFACE_RMNET_ENABLE=y/ECM_INTERFACE_RMNET_ENABLE=n/g' $ECM_BUILD/Makefile
+
+# 2. 删除所有RMNET源码文件
+rm -f $ECM_BUILD/ecm_rmnet.c $ECM_BUILD/ecm_rmnet.h
+
+# 3. 全局递归清除所有残留符号引用（含frontends子目录）
+find $ECM_BUILD -type f \( -name "*.c" -o -name "*.h" \) | xargs -r sed -i \
+-e '/nss_rmnet_rx_get_ifnum/d' \
+-e '/ecm_rmnet/d' \
+-e '/CONFIG_NSS_RMNET/,/#endif/d'
+
+# 4. 清除编译列表
+sed -i '/ecm_rmnet/d' $ECM_BUILD/Makefile
+
+# 5. 最终校验（无输出=彻底干净）
+echo "===== 校验RMNET残留 ====="
+grep -rn "rmnet\|nss_rmnet" $ECM_BUILD || echo "✅ 无任何RMNET残留，补丁成功"
 
 # ========== 保留12.5 FullCone NAT 开机生效 ==========
  mkdir -p package/base-files/files/etc/modules.d
