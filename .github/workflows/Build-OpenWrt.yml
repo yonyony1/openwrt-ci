@@ -167,12 +167,6 @@ jobs:
           mv "$mirror_file.tmp" "$mirror_file"
           sed -i '/raw\.gitmirror\.com/d' scripts/download.pl
 
-      - name: Clean old staging cache
-        run: |
-          cd "$OPENWRT_PATH"
-          rm -rf staging_dir build_dir package/feeds/nss_packages
-          make clean
-
       - name: Generate Variables(生成变量)
         id: variables
         env:
