@@ -247,8 +247,7 @@ jobs:
         echo "src-git nss_packages https://github.com/xhikarishii/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
         ./scripts/feeds update -a
         ./scripts/feeds install -a
-
-echo "===== find rmnet package ====="
+        echo "===== find rmnet package ====="
         find package/feeds/nss_packages -name "*rmnet*"
         echo "===== feeds.conf.default ====="
         cat feeds.conf.default
