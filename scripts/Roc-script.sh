@@ -364,7 +364,6 @@ make defconfig
 # ========== 12.5专属：彻底阉割RMNET，根治 nss_rmnet_rx_get_ifnum 未定义 ==========
 make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
 
-# 修正find：在build_dir下递归查找ecm源码目录
 ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1)
 echo "ECM Build Path: $ECM_BUILD"
 
@@ -373,25 +372,30 @@ if [ -z "$ECM_BUILD" ] || [ ! -d "$ECM_BUILD" ]; then
     exit 1
 fi
 
-# 1. 关闭ECM层RMNET编译开关
+# ========== 彻底移除RMNET相关代码，修复 nss_rmnet_rx_get_ifnum undefined ==========
+# 1. Makefile关闭RMNET选项
 sed -i 's/ECM_RMNET_SUPPORT=y/ECM_RMNET_SUPPORT=n/g' "$ECM_BUILD"/Makefile
 sed -i 's/ECM_INTERFACE_RMNET_ENABLE=y/ECM_INTERFACE_RMNET_ENABLE=n/g' "$ECM_BUILD"/Makefile
 
-# 2. 删除所有RMNET源码文件
+# 2. 删除RMNET源文件引用
 rm -f "$ECM_BUILD"/ecm_rmnet.c "$ECM_BUILD"/ecm_rmnet.h
+sed -i '/ecm_rmnet/d' "$ECM_BUILD"/Makefile
 
-# 3. 全局递归清除所有残留符号引用（含frontends子目录）
-find "$ECM_BUILD" -type f \( -name "*.c" -o -name "*.h" \) | xargs -r sed -i \
--e '/nss_rmnet_rx_get_ifnum/d' \
+# 3. 【重点修复】删除所有调用 nss_rmnet_rx_get_ifnum 的代码块，支持跨行匹配(GNU sed)
+find "$ECM_BUILD" -type f \( -name "*.c" -o -name "*.h" \) | xargs -r sed -i -z \
+-e 's/[^{};]*nss_rmnet_rx_get_ifnum[^;]*;//g' \
+-e 's/[^{};]*nss_rmnet_rx_get_ifnum[^}]*}//g' \
 -e '/ecm_rmnet/d' \
 -e '/CONFIG_NSS_RMNET/,/#endif/d'
 
-# 4. 清除编译列表
-sed -i '/ecm_rmnet/d' "$ECM_BUILD"/Makefile
-
-# 5. 最终校验（无输出=彻底干净）
-echo "===== 校验RMNET残留 ====="
-grep -rn "rmnet\|nss_rmnet" "$ECM_BUILD" || echo "✅ 无任何RMNET残留，补丁成功"
+# 4. 校验：搜索是否还存在残留符号
+echo "===== Check remaining nss_rmnet_rx_get_ifnum ====="
+if grep -r "nss_rmnet_rx_get_ifnum" "$ECM_BUILD"; then
+    echo "❌ ERROR: Found remaining nss_rmnet_rx_get_ifnum in source code!"
+    exit 1
+else
+    echo "✅ No nss_rmnet_rx_get_ifnum found, patch OK"
+fi
 
 
 # ========== 保留12.5 FullCone NAT 开机生效 ==========
