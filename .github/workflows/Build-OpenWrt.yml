@@ -235,6 +235,12 @@ jobs:
             ${{ env.STAGING_FALLBACK_PREFIX }}
           path: ${{ env.OPENWRT_PATH }}/staging_dir
 
+      - name: Clean old staging cache
+        run: |
+          cd "$OPENWRT_PATH"
+          rm -rf staging_dir build_dir package/feeds/nss_packages
+          make clean
+
       - name: Update Feeds(更新feeds)
         run: |
           cd "$OPENWRT_PATH"
