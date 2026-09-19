@@ -361,18 +361,6 @@ fi
 # 【现在执行 make defconfig】
 make defconfig
 
-# ===================== 路线A：启用 qca-nss-rmnet，保留RMNET代码 =====================
-echo "===== Prepare qca-nss-rmnet & qca-nss-ecm ====="
-make package/feeds/nss_packages/qca-nss-rmnet/prepare V=w
-make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
-
-ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1)
-echo "ECM Build Path: $ECM_BUILD"
-if [ -z "$ECM_BUILD" ] || [ ! -d "$ECM_BUILD" ]; then
-    echo "ERROR: Cannot find qca-nss-ecm build directory!" >&2
-    exit 1
-fi
-
 # ===================== ECM RMNET 支持（wwan一体化分支，无独立qca-nss-rmnet） =====================
 echo "===== Prepare qca-nss-ecm ====="
 make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
