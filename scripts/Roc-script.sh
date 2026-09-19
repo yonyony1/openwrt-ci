@@ -361,23 +361,16 @@ fi
 # 【现在执行 make defconfig】
 make defconfig
 
-# ===================== ECM RMNET 支持（wwan一体化分支，无独立qca-nss-rmnet） =====================
-echo "===== Prepare qca-nss-ecm ====="
-make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
-
-ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1)
-echo "ECM Build Path: $ECM_BUILD"
-if [ -z "$ECM_BUILD" ] || [ ! -d "$ECM_BUILD" ]; then
-    echo "ERROR: Cannot find qca-nss-ecm build directory!" >&2
-    exit 1
+# ===================== ECM RMNET 支持（wwan一体化分支） =====================
+echo "===== Patch ECM enable RMNET before global compile ====="
+ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1 || true)
+if [ -n "$ECM_BUILD" ] && [ -d "$ECM_BUILD" ]; then
+  sed -i 's/ECM_RMNET_SUPPORT=n/ECM_RMNET_SUPPORT=y/g' "$ECM_BUILD"/Makefile
+  sed -i 's/ECM_INTERFACE_RMNET_ENABLE=n/ECM_INTERFACE_RMNET_ENABLE=y/g' "$ECM_BUILD"/Makefile
+else
+  echo "⚠️ ECM source dir not found yet, patch will be applied during build automatically"
 fi
 
-# 开启ECM RMNET支持，适配wwan包内rmnet驱动
-sed -i 's/ECM_RMNET_SUPPORT=n/ECM_RMNET_SUPPORT=y/g' "$ECM_BUILD"/Makefile
-sed -i 's/ECM_INTERFACE_RMNET_ENABLE=n/ECM_INTERFACE_RMNET_ENABLE=y/g' "$ECM_BUILD"/Makefile
-
-echo "===== Compile qca-nss-ecm ====="
-make package/feeds/nss_packages/qca-nss-ecm/compile V=s
 
 # ========== 保留12.5 FullCone NAT 开机生效 ==========
 mkdir -p package/base-files/files/etc/modules.d
