@@ -373,19 +373,20 @@ if [ -z "$ECM_BUILD" ] || [ ! -d "$ECM_BUILD" ]; then
     exit 1
 fi
 
-# 开启ECM RMNET支持（路线A，不再删除rmnet相关源码）
-sed -i 's/ECM_RMNET_SUPPORT=n/ECM_RMNET_SUPPORT=y/g' "$ECM_BUILD"/Makefile
-sed -i 's/ECM_INTERFACE_RMNET_ENABLE=n/ECM_INTERFACE_RMNET_ENABLE=y/g' "$ECM_BUILD"/Makefile
+# ===================== ECM RMNET 支持（wwan一体化分支，无独立qca-nss-rmnet） =====================
+echo "===== Prepare qca-nss-ecm ====="
+make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
 
-# ========== 关键编译顺序：先编译 qca-nss-rmnet 生成 symvers，再编译 ecm ==========
-echo "===== Compile qca-nss-rmnet first to export symbols ====="
-make package/feeds/nss_packages/qca-nss-rmnet/compile V=s
-
-echo "===== Check qca-nss-rmnet symvers ====="
-if ! grep "nss_rmnet_rx_get_ifnum" build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/symvers/qca-nss-rmnet.symvers; then
-    echo "❌ ERROR: nss_rmnet_rx_get_ifnum symbol not exported in qca-nss-rmnet.symvers" >&2
+ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1)
+echo "ECM Build Path: $ECM_BUILD"
+if [ -z "$ECM_BUILD" ] || [ ! -d "$ECM_BUILD" ]; then
+    echo "ERROR: Cannot find qca-nss-ecm build directory!" >&2
     exit 1
 fi
+
+# 开启ECM RMNET支持，适配wwan包内rmnet驱动
+sed -i 's/ECM_RMNET_SUPPORT=n/ECM_RMNET_SUPPORT=y/g' "$ECM_BUILD"/Makefile
+sed -i 's/ECM_INTERFACE_RMNET_ENABLE=n/ECM_INTERFACE_RMNET_ENABLE=y/g' "$ECM_BUILD"/Makefile
 
 echo "===== Compile qca-nss-ecm ====="
 make package/feeds/nss_packages/qca-nss-ecm/compile V=s
