@@ -361,42 +361,34 @@ fi
 # 【现在执行 make defconfig】
 make defconfig
 
-# ========== 12.5专属：彻底阉割RMNET，根治 nss_rmnet_rx_get_ifnum 未定义 ==========
+# ===================== 路线A：启用 qca-nss-rmnet，保留RMNET代码 =====================
+echo "===== Prepare qca-nss-rmnet & qca-nss-ecm ====="
+make package/feeds/nss_packages/qca-nss-rmnet/prepare V=w
 make package/feeds/nss_packages/qca-nss-ecm/prepare V=w
 
 ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1)
 echo "ECM Build Path: $ECM_BUILD"
-
 if [ -z "$ECM_BUILD" ] || [ ! -d "$ECM_BUILD" ]; then
     echo "ERROR: Cannot find qca-nss-ecm build directory!" >&2
     exit 1
 fi
 
-# ========== 彻底移除RMNET相关代码，修复 nss_rmnet_rx_get_ifnum undefined ==========
-# 1. Makefile关闭RMNET选项
-sed -i 's/ECM_RMNET_SUPPORT=y/ECM_RMNET_SUPPORT=n/g' "$ECM_BUILD"/Makefile
-sed -i 's/ECM_INTERFACE_RMNET_ENABLE=y/ECM_INTERFACE_RMNET_ENABLE=n/g' "$ECM_BUILD"/Makefile
+# 开启ECM RMNET支持（路线A，不再删除rmnet相关源码）
+sed -i 's/ECM_RMNET_SUPPORT=n/ECM_RMNET_SUPPORT=y/g' "$ECM_BUILD"/Makefile
+sed -i 's/ECM_INTERFACE_RMNET_ENABLE=n/ECM_INTERFACE_RMNET_ENABLE=y/g' "$ECM_BUILD"/Makefile
 
-# 2. 删除RMNET源文件引用
-rm -f "$ECM_BUILD"/ecm_rmnet.c "$ECM_BUILD"/ecm_rmnet.h
-sed -i '/ecm_rmnet/d' "$ECM_BUILD"/Makefile
+# ========== 关键编译顺序：先编译 qca-nss-rmnet 生成 symvers，再编译 ecm ==========
+echo "===== Compile qca-nss-rmnet first to export symbols ====="
+make package/feeds/nss_packages/qca-nss-rmnet/compile V=s
 
-# 3. 【重点修复】删除所有调用 nss_rmnet_rx_get_ifnum 的代码块，支持跨行匹配(GNU sed)
-find "$ECM_BUILD" -type f \( -name "*.c" -o -name "*.h" \) | xargs -r sed -i -z \
--e 's/[^{};]*nss_rmnet_rx_get_ifnum[^;]*;//g' \
--e 's/[^{};]*nss_rmnet_rx_get_ifnum[^}]*}//g' \
--e '/ecm_rmnet/d' \
--e '/CONFIG_NSS_RMNET/,/#endif/d'
-
-# 4. 校验：搜索是否还存在残留符号
-echo "===== Check remaining nss_rmnet_rx_get_ifnum ====="
-if grep -r "nss_rmnet_rx_get_ifnum" "$ECM_BUILD"; then
-    echo "❌ ERROR: Found remaining nss_rmnet_rx_get_ifnum in source code!"
+echo "===== Check qca-nss-rmnet symvers ====="
+if ! grep "nss_rmnet_rx_get_ifnum" build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/symvers/qca-nss-rmnet.symvers; then
+    echo "❌ ERROR: nss_rmnet_rx_get_ifnum symbol not exported in qca-nss-rmnet.symvers" >&2
     exit 1
-else
-    echo "✅ No nss_rmnet_rx_get_ifnum found, patch OK"
 fi
 
+echo "===== Compile qca-nss-ecm ====="
+make package/feeds/nss_packages/qca-nss-ecm/compile V=s
 
 # ========== 保留12.5 FullCone NAT 开机生效 ==========
 mkdir -p package/base-files/files/etc/modules.d
