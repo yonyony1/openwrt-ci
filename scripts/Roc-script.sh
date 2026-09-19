@@ -132,11 +132,9 @@ clone_repository() {
 mkdir -p "$(dirname "$THIRD_PARTY_SOURCES_FILE")"
 printf 'Repository\tBranch\tCommit\n' > "$THIRD_PARTY_SOURCES_FILE"
 
-# ========== 【修改这里】反向修改IP：原版192.168.1.1→192.168.2.1，改成192.168.2.1→192.168.1.1 ==========
-sed -i 's/192.168.2.1/192.168.1.1/g' package/base-files/files/bin/config_generate
-# 修改主机名 Roc → SS01
-sed -i "s/hostname='.*'/hostname='SS01'/g" package/base-files/files/bin/config_generate
-
+# 修改默认IP & 固件名称 & 编译署名和时间
+sed -i 's/192.168.1.1/192.168.2.1/g' package/base-files/files/bin/config_generate
+sed -i "s/hostname='.*'/hostname='Roc'/g" package/base-files/files/bin/config_generate
 luci_system_js="feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js"
 firmware_version_anchor="_('Firmware Version'), (L.isObject(boardinfo.release) ? boardinfo.release.description + ' / ' : '') + (luciversion || ''),"
 grep -Fq "$firmware_version_anchor" "$luci_system_js" || { echo "Error: LuCI firmware version anchor was not found in $luci_system_js" >&2; exit 1; }
@@ -307,7 +305,6 @@ if package_enabled luci-app-gecoosac gecoosac; then
   clone_repository https://github.com/laipeng668/luci-app-gecoosac main package/luci-app-gecoosac
 fi
 
-# athena-led 灯控，RE‑SS‑01的config不开启就自动跳过，不需要删除这段代码
 if package_enabled luci-app-athena-led luci-i18n-athena-led-zh-cn; then
   clone_repository https://github.com/NONGFAH/luci-app-athena-led main package/luci-app-athena-led
   chmod +x package/luci-app-athena-led/root/etc/init.d/athena_led package/luci-app-athena-led/root/usr/sbin/athena-led
@@ -336,45 +333,17 @@ if package_enabled luci-app-openclash; then
   clone_repository https://github.com/vernesong/OpenClash master package/luci-app-openclash
 fi
 
-# ========== 导入配置文件 ==========
-cp "$1" .config
-cp "$2" general.config
-cat general.config >> .config
+# 清理 PassWall 的 chnlist 规则文件
+# echo "baidu.com"  > package/luci-app-passwall/luci-app-passwall/root/usr/share/passwall/rules/chnlist
 
-# ========== 【时序调整】先更新&安装feeds ==========
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
-
-echo "===== Disable qca-nss-crypto hash check permanently ====="
-NSS_CRYPTO_MK="feeds/nss_packages/qca-nss-crypto/Makefile"
-sed -i 's/a195ba22016d91cd1711fe8f5167d65cfbd03feee5a9089929cb0d2180bf4047/skip/g' "$NSS_CRYPTO_MK"
-
-# ===================== 清理 ECM/NSS 构建缓存【挪到这里！！】=====================
-echo "===== Clean NSS/ECM build cache ====="
-rm -rf \
-    build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/qca-nss* \
-    build_dir/target-aarch64_cortex-a53_musl/linux-qualcommax_ipq60xx/nss-ifb* \
-    staging_dir/target-aarch64_cortex-a53_musl/stamp/.qca-nss*
 
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
   clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
-
-# 【现在执行 make defconfig】
-make defconfig
-
-# ===================== ECM RMNET 支持（wwan一体化分支） =====================
-echo "===== Patch ECM enable RMNET before global compile ====="
-ECM_BUILD=$(find build_dir -type d -path "*/qca-nss-ecm-*" | head -n1 || true)
-if [ -n "$ECM_BUILD" ] && [ -d "$ECM_BUILD" ]; then
-  sed -i 's/ECM_RMNET_SUPPORT=n/ECM_RMNET_SUPPORT=y/g' "$ECM_BUILD"/Makefile
-  sed -i 's/ECM_INTERFACE_RMNET_ENABLE=n/ECM_INTERFACE_RMNET_ENABLE=y/g' "$ECM_BUILD"/Makefile
-else
-  echo "⚠️ ECM source dir not found yet, patch will be applied during build automatically"
-fi
-
 
 # ========== 保留12.5 FullCone NAT 开机生效 ==========
 mkdir -p package/base-files/files/etc/modules.d
