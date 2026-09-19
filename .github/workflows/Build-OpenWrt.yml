@@ -239,12 +239,12 @@ jobs:
       run: |
         cd "$OPENWRT_PATH"
         # 移除原有重复的nss_packages feed定义
-        sed -i '/^src-git nss_packages/d' feeds.conf.default
-        # 添加带rmnet支持的wwan分支
-        echo "src-git nss_packages https://github.com/qosmio/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
-        # xhikarishii修复版RMNET，RM500U推荐，切换注释即可
         # sed -i '/^src-git nss_packages/d' feeds.conf.default
-        # echo "src-git nss_packages https://github.com/xhikarishii/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
+        # 添加带rmnet支持的wwan分支
+        # echo "src-git nss_packages https://github.com/qosmio/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
+        # xhikarishii修复版RMNET，RM500U推荐，切换注释即可
+        sed -i '/^src-git nss_packages/d' feeds.conf.default
+        echo "src-git nss_packages https://github.com/xhikarishii/nss-packages.git;NSS-12.5-K6.x-wwan" >> feeds.conf.default
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
