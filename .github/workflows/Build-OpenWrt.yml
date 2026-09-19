@@ -248,6 +248,22 @@ jobs:
         ./scripts/feeds update -a
         ./scripts/feeds install -a
 
+echo "===== find rmnet package ====="
+        find package/feeds/nss_packages -name "*rmnet*"
+        echo "===== feeds.conf.default ====="
+        cat feeds.conf.default
+    - name: Prepare config
+      run: |
+        cd "$OPENWRT_PATH"
+        # 关键：清理旧的 .config，彻底清除残留错误选项
+        rm -f .config .config.old
+        # 复制你的配置文件（改成你实际的配置文件名）
+        cp configs/jdcloud_re-ss-01.config .config
+        # 强制重新展开配置，检查依赖
+        make defconfig
+        # 打印校验：查看是否还残留错误配置项
+        echo "==== Check bad config ===="
+        grep -E "CONFIG_PACKAGE_qca-nss-rmnet|CONFIG_PACKAGE_luci-app-qmodem" .config
 
     - name: Load Custom Configuration(加载自定义配置)
       env:
