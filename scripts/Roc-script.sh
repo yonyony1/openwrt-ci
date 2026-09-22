@@ -349,31 +349,3 @@ fi
 mkdir -p package/base-files/files/etc/modules.d
 echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
-# ========== HASS rpcd ACL ==========
-mkdir -p package/base-files/files/usr/share/rpcd/acl.d
-cat > package/base-files/files/usr/share/rpcd/acl.d/hass.json <<EOF
-{
-  "hass": {
-    "description": "HomeAssistant read-only ubus access",
-    "read": {
-      "ubus": {
-        "*": ["*"]
-      },
-      "uci": ["*"]
-    },
-    "write": {}
-  }
-}
-EOF
-
-mkdir -p package/base-files/files/etc/config
-if ! grep -q "hass" package/base-files/files/etc/config/rpcd; then
-cat >> package/base-files/files/etc/config/rpcd <<EOF
-
-config login
-        option username 'hass'
-        option password '\$p\$hass123456'
-        list read '*'
-        list write ''
-EOF
-fi
