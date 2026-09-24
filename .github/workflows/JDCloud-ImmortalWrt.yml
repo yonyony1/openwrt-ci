@@ -17,7 +17,7 @@ jobs:
       contents: write
       actions: write
     with:
-      repo_url: https://github.com/yonyony1/immortalwrt.git
+      repo_url: https://github.com/yonyony1/immortalwrt-guanfangku
       repo_branch: openwrt-25.12
       config_file: configs/jdcloud_re-ss-01.config
       firmware_tag: JDCloud
