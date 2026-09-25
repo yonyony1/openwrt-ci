@@ -309,7 +309,7 @@ jobs:
       run: |
         cd "$OPENWRT_PATH"/bin/targets/*/*
         echo "===== Generated firmware bin list ====="
-        ls -lh *.bin
+        ls -lh *.bin 2>/dev/null || echo "Warning: No bin firmware files found in this folder!"
         echo "========================================"
 
         cp "$OPENWRT_PATH/.config" "$ARTIFACT_PREFIX.config"
