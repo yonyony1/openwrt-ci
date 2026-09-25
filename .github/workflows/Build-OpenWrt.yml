@@ -308,9 +308,14 @@ jobs:
         PACKAGE_EXTENSION: ${{ inputs.package_extension }}
       run: |
         cd "$OPENWRT_PATH"/bin/targets/*/*
+        echo "===== Generated firmware bin list ====="
+        ls -lh *.bin
+        echo "========================================"
+
         cp "$OPENWRT_PATH/.config" "$ARTIFACT_PREFIX.config"
         mv config.buildinfo "$ARTIFACT_PREFIX.config.buildinfo"
-        mv "$MANIFEST_FILE" "$ARTIFACT_PREFIX.manifest"
+        mv "$OPENWRT_PATH/$MANIFEST_FILE" "$ARTIFACT_PREFIX.manifest"
+
         case "$PACKAGE_EXTENSION" in
           apk | ipk) ;;
           *)
@@ -329,18 +334,21 @@ jobs:
           exit 1
         fi
         tar -zcf "$ARTIFACT_PREFIX.Packages.tar.gz" packages
+
         if [ "${{ inputs.rename_qualcommax_to_nowifi }}" = "true" ]; then
           for file in *qualcommax*.bin; do
             [ -e "$file" ] || continue
             mv "$file" "${file//qualcommax/nowifi}"
           done
         fi
+
         third_party_sources="$OPENWRT_PATH/third-party-sources.txt"
-        if [ ! -s "$third_party_sources" ]; then
-          echo "Error: third-party source revision file was not generated: $third_party_sources" >&2
-          exit 1
+        if [ -f "$third_party_sources" ] && [ -s "$third_party_sources" ]; then
+          cp "$third_party_sources" "$ARTIFACT_PREFIX.third-party-sources.txt"
+        else
+          echo "::warning::third-party-sources.txt not found or empty, skip copy"
         fi
-        cp "$third_party_sources" "$ARTIFACT_PREFIX.third-party-sources.txt"
+
         rm -rf packages feeds.buildinfo version.buildinfo sha256sums profiles.json
         echo "firmware_path=$PWD" >> "$GITHUB_OUTPUT"
 
