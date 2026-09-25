@@ -349,3 +349,10 @@ fi
 mkdir -p package/base-files/files/etc/modules.d
 echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
 
+# ===================== DEBUG: enlarge IMAGE_SIZE for mango‑dvk & jdcloud_re‑ss‑01, FOR CI BUILD ONLY! DO NOT FLASH! =====================
+echo "Apply IMAGE_SIZE patch for debug build"
+sed -i \
+-e 's/IMAGE_SIZE:=28639232/IMAGE_SIZE:=120000000/g' \
+target/linux/qualcommax/image/Makefile
+
+
