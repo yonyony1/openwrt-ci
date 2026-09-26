@@ -293,6 +293,8 @@ jobs:
     - name: Compile Firmware(开始编译固件)
       run: |
         cd "$OPENWRT_PATH"
+        # 屏蔽 8devices_mango‑dvk 设备定义，防止体积告警破坏整个image构建
+        sed -i '/define Device\/8devices_mango-dvk/,/^endef/s/^/#/' target/linux/qualcommax/image/Makefile
         echo -e "$(nproc) thread compile"
         make -j"$(nproc)" || make -j1 V=s
 
@@ -314,7 +316,7 @@ jobs:
 
         cp "$OPENWRT_PATH/.config" "$ARTIFACT_PREFIX.config"
         mv config.buildinfo "$ARTIFACT_PREFIX.config.buildinfo"
-        mv "$OPENWRT_PATH/$MANIFEST_FILE" "$ARTIFACT_PREFIX.manifest"
+        mv "$MANIFEST_FILE" "$ARTIFACT_PREFIX.manifest"
 
         case "$PACKAGE_EXTENSION" in
           apk | ipk) ;;
