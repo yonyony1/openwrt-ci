@@ -293,8 +293,6 @@ jobs:
     - name: Compile Firmware(开始编译固件)
       run: |
         cd "$OPENWRT_PATH"
-        # 屏蔽 8devices_mango‑dvk 设备定义，防止体积告警破坏整个image构建
-        sed -i '/define Device\/8devices_mango-dvk/,/^endef/s/^/#/' target/linux/qualcommax/image/Makefile
         echo -e "$(nproc) thread compile"
         make -j"$(nproc)" || make -j1 V=s
 
@@ -310,14 +308,9 @@ jobs:
         PACKAGE_EXTENSION: ${{ inputs.package_extension }}
       run: |
         cd "$OPENWRT_PATH"/bin/targets/*/*
-        echo "===== Generated firmware bin list ====="
-        ls -lh *.bin 2>/dev/null || echo "Warning: No bin firmware files found in this folder!"
-        echo "========================================"
-
         cp "$OPENWRT_PATH/.config" "$ARTIFACT_PREFIX.config"
         mv config.buildinfo "$ARTIFACT_PREFIX.config.buildinfo"
         mv "$MANIFEST_FILE" "$ARTIFACT_PREFIX.manifest"
-
         case "$PACKAGE_EXTENSION" in
           apk | ipk) ;;
           *)
@@ -336,21 +329,18 @@ jobs:
           exit 1
         fi
         tar -zcf "$ARTIFACT_PREFIX.Packages.tar.gz" packages
-
         if [ "${{ inputs.rename_qualcommax_to_nowifi }}" = "true" ]; then
           for file in *qualcommax*.bin; do
             [ -e "$file" ] || continue
             mv "$file" "${file//qualcommax/nowifi}"
           done
         fi
-
         third_party_sources="$OPENWRT_PATH/third-party-sources.txt"
-        if [ -f "$third_party_sources" ] && [ -s "$third_party_sources" ]; then
-          cp "$third_party_sources" "$ARTIFACT_PREFIX.third-party-sources.txt"
-        else
-          echo "::warning::third-party-sources.txt not found or empty, skip copy"
+        if [ ! -s "$third_party_sources" ]; then
+          echo "Error: third-party source revision file was not generated: $third_party_sources" >&2
+          exit 1
         fi
-
+        cp "$third_party_sources" "$ARTIFACT_PREFIX.third-party-sources.txt"
         rm -rf packages feeds.buildinfo version.buildinfo sha256sums profiles.json
         echo "firmware_path=$PWD" >> "$GITHUB_OUTPUT"
 
