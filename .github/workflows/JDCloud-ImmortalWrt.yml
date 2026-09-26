@@ -17,8 +17,8 @@ jobs:
       contents: write
       actions: write
     with:
-      repo_url: https://github.com/yonyony1/immortalwrt-VIKINGYFY
-      repo_branch: main
+      repo_url: https://github.com/laipeng668/immortalwrt.git
+      repo_branch: openwrt-25.12
       config_file: configs/jdcloud_re-ss-01.config
       firmware_tag: JDCloud
       kernel_file: kernel-6.18
