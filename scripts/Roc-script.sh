@@ -344,10 +344,3 @@ if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
   clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
-
-# ========== 保留12.5 FullCone NAT 开机生效 ==========
-mkdir -p package/base-files/files/etc/modules.d
-echo "qca_nss_ecm ecm_fullcone=1" > package/base-files/files/etc/modules.d/99-ecm-fullcone
-
-
-
