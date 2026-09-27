@@ -27,6 +27,10 @@ on:
       release_summary:
         required: true
         type: string
+      WRT_THEME:
+        required: false
+        type: string
+        default: "aurora"
       WRT_SSID:
         required: false
         type: string
