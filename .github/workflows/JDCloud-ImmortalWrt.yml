@@ -18,7 +18,7 @@ on:
       WRT_SSID:
         required: true
         type: string
-        default: JDCloud‑WiFi
+        default: JDCloud-WiFi
       WRT_WORD:
         required: true
         type: string
@@ -30,7 +30,7 @@ on:
       WRT_PW:
         required: true
         type: string
-        default:
+        default: ""
       WRT_REPO:
         required: true
         type: string
@@ -40,6 +40,34 @@ on:
         type: string
         default: openwrt-25.12
   workflow_call:
+    inputs:
+      WRT_CONFIG:
+        required: true
+        type: string
+      WRT_THEME:
+        required: true
+        type: string
+      WRT_NAME:
+        required: true
+        type: string
+      WRT_SSID:
+        required: true
+        type: string
+      WRT_WORD:
+        required: true
+        type: string
+      WRT_IP:
+        required: true
+        type: string
+      WRT_PW:
+        required: true
+        type: string
+      WRT_REPO:
+        required: true
+        type: string
+      WRT_BRANCH:
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -56,11 +84,11 @@ jobs:
       repo_branch: ${{ inputs.WRT_BRANCH }}
       config_file: ${{ inputs.WRT_CONFIG }}
       firmware_tag: ${{ inputs.WRT_NAME }}
-      kernel_file: kernel‑6.18
+      kernel_file: kernel-6.18
       artifact_prefix: JDCloud
-      manifest_file: immortalwrt‑qualcommax‑ipq60xx.manifest
+      manifest_file: immortalwrt-qualcommax-ipq60xx.manifest
       release_summary: >-
-        这是开启全功能NSS的6.18内核固件，默认主题为Aurora；该固件在ImmortalWrt的基础上，添加了额外的软件包cpufreq、ddns、upnp、wol、samba4、vlmcsd、aria2、autoreboot、uhttpd、frps、frpc、diskman、hd‑idle、acme、openlist2、wireguard、watchcat、passwall、gecoosac，并添加了若干工具。
+        这是开启全功能NSS的6.18内核固件，默认主题为Aurora；该固件在ImmortalWrt的基础上，添加了额外的软件包cpufreq、ddns、upnp、wol、samba4、vlmcsd、aria2、autoreboot、uhttpd、frps、frpc、diskman、hd-idle、acme、openlist2、wireguard、watchcat、passwall、gecoosac，并添加了若干工具。
       WRT_THEME: ${{ inputs.WRT_THEME }}
       WRT_SSID: ${{ inputs.WRT_SSID }}
       WRT_WORD: ${{ inputs.WRT_WORD }}
