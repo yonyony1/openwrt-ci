@@ -4,27 +4,27 @@ on:
   workflow_dispatch:
     inputs:
       WRT_CONFIG:
-        required: true
+        required: false
         type: string
         default: configs/jdcloud_re-ss-01.config
       WRT_THEME:
-        required: true
+        required: false
         type: string
         default: aurora
       WRT_NAME:
-        required: true
+        required: false
         type: string
         default: JDCloud
       WRT_SSID:
-        required: true
+        required: false
         type: string
         default: JDCloud-WiFi
       WRT_WORD:
-        required: true
+        required: false
         type: string
         default: 12345678
       WRT_IP:
-        required: true
+        required: false
         type: string
         default: 192.168.1.1
       WRT_PW:
