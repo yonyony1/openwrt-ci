@@ -437,6 +437,11 @@ jobs:
         name: ${{ needs.Build.outputs.artifact_name }}
         path: artifacts/firmware
 
+Release:
+  name: Create Github Release
+  needs: Build
+  runs-on: ubuntu‑latest
+  steps:
     - name: Upload Firmware To Release(发布固件)
       uses: ncipollo/release-action@v1
       with:
@@ -457,7 +462,7 @@ jobs:
           - 🌐 默认地址: **${{ inputs.WRT_IP }}**
           - 🔑 默认root密码: **${{ inputs.WRT_PW }}**
           ### 🧊 固件版本
-             - 固件内核版本：**${{ needs.Build.outputs.version_kernel }}**
-             - 固件编译前最后一次➦[主源码](${{ inputs.repo_url }})更新记录
-             - ${{ inputs.WRT_SSID }} / ${{ inputs.WRT_WORD }}
-             - ${{ needs.Build.outputs.version_info }}
+          - 固件内核版本：**${{ needs.Build.outputs.version_kernel }}**
+          - 固件编译前最后一次➦[主源码](${{ inputs.repo_url }})更新记录
+          - ${{ inputs.WRT_SSID }} / ${{ inputs.WRT_WORD }}
+          - ${{ needs.Build.outputs.version_info }}
