@@ -296,9 +296,25 @@ jobs:
         echo -e "$(nproc) thread compile"
         make -j"$(nproc)" || make -j1 V=s
 
-    - name: Check Space Usage(检查空间使用情况)
+    - name: Check Space Usage(检查空间使用情况 & 列出编译产出)
       if: (!cancelled())
-      run: df -hT
+      run: |
+        df -hT
+        echo "=================================================="
+        echo "📦 编译产出 bin 目录内容:"
+        cd "$OPENWRT_PATH"
+        echo "--- bin/targets ---"
+        ls -laR bin/targets || echo "bin/targets 目录不存在或者为空!"
+        echo ""
+        echo "--- bin/packages ---"
+        ls -la bin/packages || echo "bin/packages 目录不存在或者为空!"
+        echo ""
+        echo "--- 查找所有生成的bin固件文件 ---"
+        find bin -name "*.bin"
+        echo ""
+        echo "--- 查找manifest / json清单文件 ---"
+        find bin -name "*.manifest"
+        find bin -name "profiles.json"
 
     - name: Organize Files(整理文件)
       id: organize
@@ -310,7 +326,13 @@ jobs:
         cd "$OPENWRT_PATH"/bin/targets/*/*
         cp "$OPENWRT_PATH/.config" "$ARTIFACT_PREFIX.config"
         mv config.buildinfo "$ARTIFACT_PREFIX.config.buildinfo"
-        mv "$MANIFEST_FILE" "$ARTIFACT_PREFIX.manifest"
+        # ----修改这里：manifest可选，存在才移动，新版不再生成
+        if [ -f "$MANIFEST_FILE" ]; then
+          mv "$MANIFEST_FILE" "$ARTIFACT_PREFIX.manifest"
+        else
+          echo "⚠️ Manifest file $MANIFEST_FILE not found, skip."
+        fi
+
         case "$PACKAGE_EXTENSION" in
           apk | ipk) ;;
           *)
@@ -337,12 +359,13 @@ jobs:
         fi
         third_party_sources="$OPENWRT_PATH/third-party-sources.txt"
         if [ ! -s "$third_party_sources" ]; then
-          echo "Error: third-party source revision file was not generated: $third_party_sources" >&2
+          echo "Error: third‑party source revision file was not generated: $third_party_sources" >&2
           exit 1
         fi
-        cp "$third_party_sources" "$ARTIFACT_PREFIX.third-party-sources.txt"
+        cp "$third_party_sources" "$ARTIFACT_PREFIX.third‑party‑sources.txt"
         rm -rf packages feeds.buildinfo version.buildinfo sha256sums profiles.json
         echo "firmware_path=$PWD" >> "$GITHUB_OUTPUT"
+
 
     - name: Upload Firmware Artifact(上传固件产物)
       uses: actions/upload-artifact@v4
