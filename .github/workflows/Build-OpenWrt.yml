@@ -261,6 +261,8 @@ jobs:
     - name: Load Custom Configuration(加载自定义配置)
       env:
         CONFIG_FILE: ${{ inputs.config_file }}
+        WRT_THEME: ${{ inputs.WRT_THEME }}
+        WRT_NAME: ${{ inputs.firmware_tag }}
         WRT_SSID: ${{ inputs.WRT_SSID }}
         WRT_WORD: ${{ inputs.WRT_WORD }}
         WRT_IP: ${{ inputs.WRT_IP }}
@@ -271,6 +273,7 @@ jobs:
         "$GITHUB_WORKSPACE/$DIY_SCRIPT" \
           "$GITHUB_WORKSPACE/$CONFIG_FILE" \
           "$GITHUB_WORKSPACE/$GENERAL_CONFIG_FILE"
+
 
     - name: Download DL Package(下载DL软件包)
       env:
