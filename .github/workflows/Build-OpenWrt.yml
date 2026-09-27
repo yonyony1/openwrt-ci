@@ -477,7 +477,7 @@ jobs:
           fi
 
           jq -r --arg key "$current_key" --arg created_at "$current_created_at" \
-            '.[] | select(.key != $key and .createdAt < $current_created_at) | [.id, .key] | @tsv' "$cache_list_file" |
+            '.[] | select(.key != $key and .createdAt < $created_at) | [.id, .key] | @tsv' "$cache_list_file" |
             while IFS=$'\t' read -r cache_id cache_key; do
               [ -n "$cache_id" ] || continue
               gh cache delete --repo "$GITHUB_REPOSITORY" "$cache_id" || echo "::warning::Unable to delete cache $cache_key ($cache_id)."
@@ -498,8 +498,9 @@ jobs:
         gh api --method GET --paginate "/repos/$GITHUB_REPOSITORY/actions/runs" \
           -f status=completed \
           -f "created=<$cutoff" \
+          -F per_page=100 \
           --jq '.workflow_runs[].id' > "$run_ids_file"
         while read -r run_id; do
           [ -n "$run_id" ] || continue
-          gh run delete --repo "$GITHUB_REPOSITORY" "$run_id" || echo "::warning::Unable to delete workflow run $run_ids_file"
+          gh run delete --repo "$GITHUB_REPOSITORY" "$run_id" || echo "::warning::Unable to delete workflow run $run_id."
         done < "$run_ids_file"
