@@ -402,13 +402,12 @@ jobs:
         fi
         third_party_sources="$OPENWRT_PATH/third-party-sources.txt"
         if [ ! -s "$third_party_sources" ]; then
-          echo "Error: third‑party source revision file was not generated: $third_party_sources" >&2
+          echo "Error: third-party source revision file was not generated: $third_party_sources" >&2
           exit 1
         fi
-        cp "$third_party_sources" "$ARTIFACT_PREFIX.third‑party‑sources.txt"
+        cp "$third_party_sources" "$ARTIFACT_PREFIX.third-party-sources.txt"
         rm -rf packages feeds.buildinfo version.buildinfo sha256sums profiles.json
         echo "firmware_path=$PWD" >> "$GITHUB_OUTPUT"
-
 
     - name: Upload Firmware Artifact(上传固件产物)
       uses: actions/upload-artifact@v4
