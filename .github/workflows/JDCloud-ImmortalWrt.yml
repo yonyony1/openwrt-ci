@@ -26,7 +26,7 @@ on:
       WRT_IP:
         required: true
         type: string
-        default: 192.168.1.1
+        default: 192.168.2.1
       WRT_PW:
         required: true
         type: string
@@ -51,14 +51,13 @@ jobs:
     permissions:
       contents: write
       actions: write
-    env:
-      WRT_THEME: ${{ inputs.WRT_THEME }}
-      WRT_SSID: ${{ inputs.WRT_SSID }}
-      WRT_WORD: ${{ inputs.WRT_WORD }}
-      WRT_IP: ${{ inputs.WRT_IP }}
-      WRT_PW: ${{ inputs.WRT_PW }}
     with:
       repo_url: ${{ inputs.WRT_REPO }}
       repo_branch: ${{ inputs.WRT_BRANCH }}
       config_file: ${{ inputs.WRT_CONFIG }}
       firmware_tag: ${{ inputs.WRT_NAME }}
+      WRT_THEME: ${{ inputs.WRT_THEME }}
+      WRT_SSID: ${{ inputs.WRT_SSID }}
+      WRT_WORD: ${{ inputs.WRT_WORD }}
+      WRT_IP: ${{ inputs.WRT_IP }}
+      WRT_PW: ${{ inputs.WRT_PW }}
