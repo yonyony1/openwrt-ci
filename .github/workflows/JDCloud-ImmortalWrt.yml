@@ -38,35 +38,6 @@ on:
         required: true
         type: string
         default: openwrt-25.12
-  workflow_call:
-    inputs:
-      WRT_CONFIG:
-        required: true
-        type: string
-      WRT_THEME:
-        required: true
-        type: string
-      WRT_NAME:
-        required: true
-        type: string
-      WRT_SSID:
-        required: true
-        type: string
-      WRT_WORD:
-        required: true
-        type: string
-      WRT_IP:
-        required: true
-        type: string
-      WRT_PW:
-        required: false
-        type: string
-      WRT_REPO:
-        required: true
-        type: string
-      WRT_BRANCH:
-        required: true
-        type: string
 
 permissions:
   contents: read
