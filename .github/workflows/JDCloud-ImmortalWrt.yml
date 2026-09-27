@@ -74,7 +74,7 @@ permissions:
 
 jobs:
   Build:
-    uses: ./github/workflows/Build-OpenWrt.yml
+    uses: ./.github/workflows/Build-OpenWrt.yml
     permissions:
       contents: write
       actions: write
