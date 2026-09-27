@@ -2,9 +2,44 @@ name: JDCloud-ImmortalWrt
 
 on:
   workflow_dispatch:
+    inputs:
+      WRT_CONFIG:
+        required: true
+        type: string
+        default: configs/jdcloud_re-ss-01.config
+      WRT_THEME:
+        required: true
+        type: string
+        default: aurora
+      WRT_NAME:
+        required: true
+        type: string
+        default: Arthur.Athena
+      WRT_SSID:
+        required: true
+        type: string
+        default: JDCloud‑WiFi
+      WRT_WORD:
+        required: true
+        type: string
+        default: 12345678
+      WRT_IP:
+        required: true
+        type: string
+        default: 192.168.2.1
+      WRT_PW:
+        required: true
+        type: string
+        default: password
+      WRT_REPO:
+        required: true
+        type: string
+        default: https://github.com/yonyony1/immortalwrt-laipeng668.git
+      WRT_BRANCH:
+        required: true
+        type: string
+        default: openwrt-25.12
   workflow_call:
-  # schedule:
-  #   - cron: "0 18 * * *"
 
 permissions:
   contents: read
@@ -17,13 +52,12 @@ jobs:
       contents: write
       actions: write
     with:
-      repo_url: https://github.com/yonyony1/immortalwrt-laipeng668.git
-      repo_branch: openwrt-25.12
-      config_file: configs/jdcloud_re-ss-01.config
-      firmware_tag: JDCloud
-      kernel_file: kernel-6.18
-      artifact_prefix: Arthur.Athena
-      manifest_file: immortalwrt-qualcommax-ipq60xx.manifest
-      delete_old_workflows: true
-      release_summary: >-
-        这是开启全功能NSS的6.18内核固件，默认主题为Aurora；该固件在ImmortalWrt的基础上，添加了额外的软件包cpufreq、ddns、upnp、wol、samba4、vlmcsd、aria2、autoreboot、uhttpd、frps、frpc、diskman、hd-idle、acme、openlist2、wireguard、watchcat、3cat、passwall、gecoosac，并添加了若干工具，具体详见JDCloud.config(NoWiFi.config)和General.config。
+      WRT_REPO: ${{ inputs.WRT_REPO }}
+      WRT_BRANCH: ${{ inputs.WRT_BRANCH }}
+      WRT_CONFIG: ${{ inputs.WRT_CONFIG }}
+      WRT_THEME: ${{ inputs.WRT_THEME }}
+      WRT_NAME: ${{ inputs.WRT_NAME }}
+      WRT_SSID: ${{ inputs.WRT_SSID }}
+      WRT_WORD: ${{ inputs.WRT_WORD }}
+      WRT_IP: ${{ inputs.WRT_IP }}
+      WRT_PW: ${{ inputs.WRT_PW }}
