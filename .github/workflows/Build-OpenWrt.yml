@@ -28,11 +28,13 @@ on:
         required: true
         type: string
       WRT_SSID:
-        required: true
+        required: false
         type: string
+        default: "IMMORTAL"
       WRT_WORD:
-        required: true
+        required: false
         type: string
+        default: "12345678"
       WRT_IP:
         required: true
         type: string
@@ -471,7 +473,7 @@ jobs:
           fi
 
           jq -r --arg key "$current_key" --arg created_at "$current_created_at" \
-            '.[] | select(.key != $key and .createdAt < $created_at) | [.id, .key] | @tsv' "$cache_list_file" |
+            '.[] | select(.key != $key and .createdAt < $current_created_at) | [.id, .key] | @tsv' "$cache_list_file" |
             while IFS=$'\t' read -r cache_id cache_key; do
               [ -n "$cache_id" ] || continue
               gh cache delete --repo "$GITHUB_REPOSITORY" "$cache_id" || echo "::warning::Unable to delete cache $cache_key ($cache_id)."
