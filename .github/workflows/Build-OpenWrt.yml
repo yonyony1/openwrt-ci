@@ -27,6 +27,18 @@ on:
       release_summary:
         required: true
         type: string
+      WRT_SSID:
+        required: true
+        type: string
+      WRT_WORD:
+        required: true
+        type: string
+      WRT_IP:
+        required: true
+        type: string
+      WRT_PW:
+        required: true
+        type: string
       remove_sqm_scripts_nss:
         required: false
         type: boolean
@@ -159,7 +171,7 @@ jobs:
         jq '
           with_entries(
             .value |= map(select(
-              test("^https?://(mirrors\\.tencent\\.com|mirrors\\.aliyun\\.com|mirrors\\.tuna\\.tsinghua\\.edu\\.cn|mirrors\\.ustc\\.edu\\.cn|mirror\\.iscas\\.ac\\.cn|mirror\\.nju\\.edu\\.cn)(/|$)")
+              test("^https?://(mirrors\.tencent\.com|mirrors\.aliyun\.com|mirrors\.tuna\.tsinghua\.edu\.cn|mirrors\.ustc\.edu\.cn|mirror\.iscas\.ac\.cn|mirror\.nju\.edu\.cn)(/|$)")
               | not
             ))
           )
@@ -243,6 +255,10 @@ jobs:
     - name: Load Custom Configuration(加载自定义配置)
       env:
         CONFIG_FILE: ${{ inputs.config_file }}
+        WRT_SSID: ${{ inputs.WRT_SSID }}
+        WRT_WORD: ${{ inputs.WRT_WORD }}
+        WRT_IP: ${{ inputs.WRT_IP }}
+        WRT_PW: ${{ inputs.WRT_PW }}
       run: |
         chmod +x "$GITHUB_WORKSPACE/$DIY_SCRIPT"
         cd "$OPENWRT_PATH"
@@ -411,11 +427,12 @@ jobs:
           - 💻 这是 ${{ inputs.firmware_tag }} 平台使用的 OpenWrt 固件
           - ⚽ 固件源码: ${{ inputs.repo_url }}
           - 💝 源码分支: ${{ inputs.repo_branch }}
-          - 🌐 默认地址: **192.168.2.1**
-          - 🔑 默认密码: none
+          - 🌐 默认地址: **${{ inputs.WRT_IP }}**
+          - 🔑 默认root密码: **${{ inputs.WRT_PW }}**
           ### 🧊 固件版本
           - 固件内核版本：**${{ needs.Build.outputs.version_kernel }}**
           - 固件编译前最后一次➦[主源码](${{ inputs.repo_url }})更新记录
+          - ${{ inputs.WRT_SSID }} / ${{ inputs.WRT_WORD }}
           - ${{ needs.Build.outputs.version_info }}
 
   Cleanup:
@@ -475,9 +492,8 @@ jobs:
         gh api --method GET --paginate "/repos/$GITHUB_REPOSITORY/actions/runs" \
           -f status=completed \
           -f "created=<$cutoff" \
-          -F per_page=100 \
           --jq '.workflow_runs[].id' > "$run_ids_file"
         while read -r run_id; do
           [ -n "$run_id" ] || continue
-          gh run delete --repo "$GITHUB_REPOSITORY" "$run_id" || echo "::warning::Unable to delete workflow run $run_id."
+          gh run delete --repo "$GITHUB_REPOSITORY" "$run_id" || echo "::warning::Unable to delete workflow run $run_ids_file"
         done < "$run_ids_file"
