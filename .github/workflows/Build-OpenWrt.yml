@@ -45,7 +45,6 @@ on:
       WRT_PW:
         required: false
         type: string
-        default:
       remove_sqm_scripts_nss:
         required: false
         type: boolean
