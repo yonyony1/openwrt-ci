@@ -286,7 +286,6 @@ jobs:
         cat > "${INITD_DIR}/wireless_factory_reset" <<'RAW'
 #!/bin/sh /etc/rc.common
 START=99
-
 start() {
         #仅恢复出厂标记存在的时候修改wifi
         [ ! -f "/etc/.firstboot" ] && return 0
