@@ -41,22 +41,22 @@ on:
   workflow_call:
     inputs:
       WRT_CONFIG:
-        required: true
+        required: false
         type: string
       WRT_THEME:
-        required: true
+        required: false
         type: string
       WRT_NAME:
-        required: true
+        required: false
         type: string
       WRT_SSID:
-        required: true
+        required: false
         type: string
       WRT_WORD:
         required: true
         type: string
       WRT_IP:
-        required: true
+        required: false
         type: string
       WRT_PW:
         required: false
