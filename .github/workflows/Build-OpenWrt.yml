@@ -34,7 +34,7 @@ on:
       WRT_SSID:
         required: false
         type: string
-        default: "IMMORTAL"
+        default: "JDCloudwifi"
       WRT_WORD:
         required: false
         type: string
