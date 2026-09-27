@@ -137,6 +137,23 @@ WRT_IP="${WRT_IP:-192.168.1.1}"
 sed -i "s/192.168.1.1/${WRT_IP}/g" package/base-files/files/bin/config_generate
 WRT_HOSTNAME="${WRT_NAME:-Roc}"
 sed -i "s/hostname='.*'/hostname='${WRT_HOSTNAME}'/g" package/base-files/files/bin/config_generate
+# ========== 新增 uci‑defaults 恢复出厂依旧重置WiFi SSID密码 ==========
+UCI_DEFAULTS_PATH="package/base-files/files/etc/uci-defaults/99-wireless-default"
+mkdir -p "$(dirname "${UCI_DEFAULTS_PATH}")"
+
+cat > "${UCI_DEFAULTS_PATH}" <<-EOF
+#!/bin/sh
+# Firstboot / factory‑reset set default wifi
+for iface in \$(uci show wireless | grep 'wifi-iface' | cut -d'.' -f2); do
+  uci set wireless."\${iface}".ssid='${WRT_SSID}'
+  uci set wireless."\${iface}".key='${WRT_WORD}'
+  uci set wireless."\${iface}".encryption='psk2'
+done
+uci commit wireless
+exit 0
+EOF
+chmod +x "${UCI_DEFAULTS_PATH}"
+
 luci_system_js="feeds/luci/modules/luci-mod-status/htdocs/luci-static/resources/view/status/include/10_system.js"
 firmware_version_anchor="_('Firmware Version'), (L.isObject(boardinfo.release) ? boardinfo.release.description + ' / ' : '') + (luciversion || ''),"
 grep -Fq "$firmware_version_anchor" "$luci_system_js" || { echo "Error: LuCI firmware version anchor was not found in $luci_system_js" >&2; exit 1; }
