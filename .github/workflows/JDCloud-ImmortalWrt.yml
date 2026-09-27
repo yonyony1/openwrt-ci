@@ -28,7 +28,7 @@ on:
         type: string
         default: 192.168.1.1
       WRT_PW:
-        required: true
+        required: false
         type: string
         default: ""
       WRT_REPO:
