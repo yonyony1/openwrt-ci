@@ -52,8 +52,8 @@ jobs:
       contents: write
       actions: write
     with:
-      WRT_REPO: ${{ inputs.WRT_REPO }}
-      WRT_BRANCH: ${{ inputs.WRT_BRANCH }}
+      repo_url: ${{ inputs.WRT_REPO }}
+      repo_branch: ${{ inputs.WRT_BRANCH }}
       WRT_CONFIG: ${{ inputs.WRT_CONFIG }}
       WRT_THEME: ${{ inputs.WRT_THEME }}
       WRT_NAME: ${{ inputs.WRT_NAME }}
