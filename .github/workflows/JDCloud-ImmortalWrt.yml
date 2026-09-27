@@ -30,7 +30,6 @@ on:
       WRT_PW:
         required: false
         type: string
-        default: ""
       WRT_REPO:
         required: true
         type: string
