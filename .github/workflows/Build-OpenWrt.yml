@@ -274,6 +274,40 @@ jobs:
           "$GITHUB_WORKSPACE/$CONFIG_FILE" \
           "$GITHUB_WORKSPACE/$GENERAL_CONFIG_FILE"
 
+    - name: Inject persistent wireless reset init.d service (no uci‑defaults)
+      env:
+        WRT_SSID: ${{ inputs.WRT_SSID }}
+        WRT_WORD: ${{ inputs.WRT_WORD }}
+      run: |
+        cd "$OPENWRT_PATH"
+        INITD_DIR="package/base-files/files/etc/init.d"
+        mkdir -p "${INITD_DIR}"
+        cat > "${INITD_DIR}/wireless_factory_reset" <<'RAW'
+#!/bin/sh /etc/rc.common
+START=99
+
+start() {
+        #仅恢复出厂标记存在的时候修改wifi
+        [ ! -f "/etc/.firstboot" ] && return 0
+
+        config_load wireless
+        config_foreach set_wifi_cfg wifi-iface
+}
+
+set_wifi_cfg(){
+        local name="$1"
+        uci set wireless."${name}".ssid='${WRT_SSID}'
+        uci set wireless."${name}".key='${WRT_WORD}'
+        uci set wireless."${name}".encryption='psk2'
+        uci commit wireless
+}
+RAW
+        sed -i "s|\${WRT_SSID}|${WRT_SSID}|g;s|\${WRT_WORD}|${WRT_WORD}|g" "${INITD_DIR}/wireless_factory_reset"
+        chmod +x "${INITD_DIR}/wireless_factory_reset"
+        # 创建软链接开机自启 S99
+        mkdir -p package/base-files/files/etc/rc.d
+        ln -sf ../init.d/wireless_factory_reset package/base-files/files/etc/rc.d/S99_wireless_factory_reset
+        echo "✅已注入常驻init.d WiFi重置服务，非uci‑defaults方案"
 
     - name: Download DL Package(下载DL软件包)
       env:
