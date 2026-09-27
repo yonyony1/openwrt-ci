@@ -332,3 +332,37 @@ if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
   clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
+
+#====================WIFI默认SSID&密码预置====================
+#仅当传入WRT_SSID WRT_WORD环境变量才生成uci‑defaults开机脚本
+if [[ -v WRT_SSID && -v WRT_WORD ]]; then
+    if [[ -n "${WRT_SSID}" && -n "${WRT_WORD}" ]]; then
+        if (( ${#WRT_WORD} >= 8 )); then
+            mkdir -p ./files/etc/uci-defaults
+            cat > ./files/etc/uci-defaults/99-set-default-wifi <<EOF
+#!/bin/sh
+#IPQ60xx双频WiFi首次开机自动设置
+uci set wireless.radio0.disabled='0'
+uci set wireless.default_radio0.ssid="${WRT_SSID}_2G"
+uci set wireless.default_radio0.encryption='psk2+ccmp'
+uci set wireless.default_radio0.key="${WRT_WORD}"
+
+uci set wireless.radio1.disabled='0'
+uci set wireless.default_radio1.ssid="${WRT_SSID}_5G"
+uci set wireless.default_radio1.encryption='psk2+ccmp'
+uci set wireless.default_radio1.key="${WRT_WORD}"
+
+uci commit wireless
+EOF
+            chmod +x ./files/etc/uci-defaults/99-set-default-wifi
+            echo "✅ WiFi预置脚本已生成: ${WRT_SSID}_2G / ${WRT_SSID}_5G"
+        else
+            echo "⚠️ WiFi密码长度不足8位，跳过WiFi预设！"
+        fi
+    else
+        echo "ℹ️ WRT_SSID / WRT_WORD 为空，跳过wifi预设"
+    fi
+else
+    echo "ℹ️ 未传入WRT_SSID/WRT_WORD环境变量，跳过wifi预设"
+fi
+
