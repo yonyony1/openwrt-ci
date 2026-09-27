@@ -59,7 +59,7 @@ on:
         required: true
         type: string
       WRT_PW:
-        required: true
+        required: false
         type: string
       WRT_REPO:
         required: true
