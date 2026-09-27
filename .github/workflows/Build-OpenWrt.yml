@@ -289,7 +289,7 @@ jobs:
           # Refresh component stamps before aggregate stamps so restored host tools and toolchains remain valid.
           tools_stamp="$(find staging_dir/host -maxdepth 2 -type f -name '.tools_compile*' -print -quit 2>/dev/null || true)"
           if [ -n "$tools_stamp" ]; then
-            find staging_dir/host/stamp -maxdepth 1 -type f ! -name '.tools_compile*' -exec touch {} + 2>/dev/null || true
+            find staging_dir/host/stamp -maxdepth 2 -type f ! -name '.tools_compile*' -exec touch {} + 2>/dev/null || true
             find staging_dir/host -maxdepth 2 -type f -name '.tools_compile*' -exec touch {} +
           fi
           for toolchain_dir in staging_dir/toolchain-*; do
@@ -480,7 +480,7 @@ jobs:
           fi
 
           jq -r --arg key "$current_key" --arg created_at "$current_created_at" \
-            '.[] | select(.key != $key and .createdAt < $created_at) | [.id, .key] | @tsv' "$cache_list_file" |
+            '.[] | select(.key != $key and .createdAt < $current_created_at) | [.id, .key] | @tsv' "$cache_list_file" |
             while IFS=$'\t' read -r cache_id cache_key; do
               [ -n "$cache_id" ] || continue
               gh cache delete --repo "$GITHUB_REPOSITORY" "$cache_id" || echo "::warning::Unable to delete cache $cache_key ($cache_id)."
