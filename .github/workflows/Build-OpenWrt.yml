@@ -177,7 +177,7 @@ jobs:
         jq '
           with_entries(
             .value |= map(select(
-              test("^https?://(mirrors\.tencent\.com|mirrors\.aliyun\.com|mirrors\.tuna\.tsinghua\.edu\.cn|mirrors\.ustc\.edu\.cn|mirror\.iscas\.ac\.cn|mirror\.nju\.edu\.cn)(/|$)")
+              test("^https?://(mirrors\\.tencent\\.com|mirrors\\.aliyun\\.com|mirrors\\.tuna\\.tsinghua\\.edu\\.cn|mirrors\\.ustc\\.edu\\.cn|mirror\\.iscas\\.ac\\.cn|mirror\\.nju\\.edu\\.cn)(/|$)")
               | not
             ))
           )
