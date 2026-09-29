@@ -436,11 +436,6 @@ jobs:
         name: ${{ needs.Build.outputs.artifact_name }}
         path: artifacts/firmware
 
-Release:
-  name: Create Github Release
-  needs: Build
-  runs-on: ubuntu‑latest
-  steps:
     - name: Upload Firmware To Release(发布固件)
       uses: ncipollo/release-action@v1
       with:
