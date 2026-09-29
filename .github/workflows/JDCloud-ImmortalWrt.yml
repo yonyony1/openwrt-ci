@@ -33,11 +33,11 @@ on:
       WRT_REPO:
         required: true
         type: string
-        default: https://github.com/yonyony1/immortalwrt-laipeng668.git
+        default: https://github.com/yonyony1/LibWrt-laipeng668.git
       WRT_BRANCH:
         required: true
         type: string
-        default: openwrt-25.12
+        default: 25.12-nss
   workflow_call:
     inputs:
       WRT_CONFIG:
