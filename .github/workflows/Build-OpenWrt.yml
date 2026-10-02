@@ -432,6 +432,7 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ./firmware-out
+
       - name: Move files out of subfolder
         run: |
           SUBDIR="./firmware-out/firmware-JDCloud"
@@ -440,22 +441,30 @@ jobs:
             rmdir "$SUBDIR"
           fi
           ls -la ./firmware-out
+
+      - name: Generate date tag
+        id: date_tag
+        run: |
+          # 格式 YYYYMMDD-HHMM
+          TAG_DATE=$(date +%Y%m%d-%H%M)
+          echo "tag_name=JDCloud-${TAG_DATE}" >> "$GITHUB_OUTPUT"
+
       - name: Upload Firmware To Release(发布固件)
         uses: ncipollo/release-action@v1
         if: ${{ needs.Build.result == 'success' }}
         with:
-          tag: JDCloud
-          name: JDCloud
-          allowUpdates: true
-          replacesArtifacts: true
+          tag: ${{ steps.date_tag.outputs.tag_name }}
+          name: ${{ steps.date_tag.outputs.tag_name }}
+          allowUpdates: false
+          replacesArtifacts: false
           artifactErrorsFailBuild: false
           token: ${{ github.token }}
           artifacts: |
             firmware-out/*.bin
-            firmware-out/*.img
             firmware-out/sha256sums
             firmware-out/*.config*
             firmware-out/*.tar.gz
+            firmware-out/*.manifest
           body: |
             **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
             ### 📒 固件信息
@@ -467,6 +476,7 @@ jobs:
             - 🔑 默认root密码: **${{ inputs.WRT_PW }}**
             ### 🧊 固件版本
             - 固件内核版本：**${{ needs.Build.outputs.version_kernel }}**
+            - 编译时间：${{ steps.date_tag.outputs.tag_name }}
             - 固件编译前最后一次➦[主源码](${{ inputs.repo_url }})更新记录
             - ${{ inputs.WRT_SSID }} / ${{ inputs.WRT_WORD }}
             - ${{ needs.Build.outputs.version_info }}
