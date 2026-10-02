@@ -434,8 +434,11 @@ jobs:
           path: ./firmware-out
       - name: Move files out of subfolder
         run: |
-          mv ./firmware-out/*/* ./firmware-out/
-          rmdir ./firmware-out/*
+          SUBDIR="./firmware-out/firmware-JDCloud"
+          if [ -d "$SUBDIR" ]; then
+            mv "$SUBDIR"/* ./firmware-out/
+            rmdir "$SUBDIR"
+          fi
           ls -la ./firmware-out
       - name: Upload Firmware To Release(发布固件)
         uses: ncipollo/release-action@v1
