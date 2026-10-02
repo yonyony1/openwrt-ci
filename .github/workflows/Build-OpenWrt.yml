@@ -432,9 +432,10 @@ jobs:
         with:
           name: ${{ env.ARTIFACT_NAME }}
           path: ./firmware-out
-          extract-here: true
-      - name: Debug list files
+      - name: Move files out of subfolder
         run: |
+          mv ./firmware-out/*/* ./firmware-out/
+          rmdir ./firmware-out/*
           ls -la ./firmware-out
       - name: Upload Firmware To Release(发布固件)
         uses: ncipollo/release-action@v1
