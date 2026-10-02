@@ -283,15 +283,13 @@ jobs:
         INITD_DIR="package/base-files/files/etc/init.d"
         mkdir -p "${INITD_DIR}"
 
-        printf '#!/bin/sh /etc/rc.common\nSTART=99\n\nstart() {\n        [ ! -f "/etc/.firstboot" ] && return 0\n\n        config_load wireless\n        config_foreach set_wifi_cfg wifi-iface\n}\n\nset_wifi_cfg(){\n        local name="$1"\n        uci set wireless."${name}".ssid="${WRT_SSID_PLACE}"\n        uci set wireless."${name}".key="${WRT_WORD_PLACE}"\n        uci set wireless."${name}".encryption="psk2"\n        uci commit wireless\n}\n' > "${INITD_DIR}/wireless_factory_reset"
+        printf '#!/bin/sh /etc/rc.common\nSTART=99\n\nstart() {\n        [ ! -f "/etc/.firstboot" ] && return 0\n\n        config_load wireless\n        config_foreach set_wifi_cfg wifi-iface\n}\n\nset_wifi_cfg(){\n        local name="$1"\n        uci set wireless."${name}".ssid="WRT_SSID_PLACE"\n        uci set wireless."${name}".key="WRT_WORD_PLACE"\n        uci set wireless."${name}".encryption="psk2"\n        uci commit wireless\n}\n' > "${INITD_DIR}/wireless_factory_reset"
 
-        sed -i "s|\"${WRT_SSID_PLACE}\"|\"${WRT_SSID}\"|g;s|\"${WRT_WORD_PLACE}\"|\"${WRT_WORD}\"|g" "${INITD_DIR}/wireless_factory_reset"
+        sed -i "s|WRT_SSID_PLACE|${WRT_SSID}|g;s|WRT_WORD_PLACE|${WRT_WORD}|g" "${INITD_DIR}/wireless_factory_reset"
         chmod +x "${INITD_DIR}/wireless_factory_reset"
         mkdir -p package/base-files/files/etc/rc.d
         ln -sf ../init.d/wireless_factory_reset package/base-files/files/etc/rc.d/S99_wireless_factory_reset
         echo "✅已注入常驻init.d WiFi重置服务，非uci‑defaults方案"
-
-
 
     - name: Download DL Package(下载DL软件包)
       env:
@@ -420,41 +418,41 @@ jobs:
         retention-days: 3
 
   Release:
-     runs-on: ubuntu-24.04
-     needs: Build
-     permissions:
-       contents: write
-       actions: read
-     concurrency:
-       group: openwrt-release-${{ github.repository }}-${{ inputs.artifact_prefix }}
-       cancel-in-progress: false
+    runs-on: ubuntu-24.04
+    needs: Build
+    permissions:
+      contents: write
+      actions: read
+    concurrency:
+      group: openwrt-release-${{ github.repository }}-${{ inputs.artifact_prefix }}
+      cancel-in-progress: false
     steps:
-    - name: Download Firmware Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ env.ARTIFACT_NAME }}
-        path: ./firmware-out
-        extract-here: true
-    - name: Debug list files
-      run: |
-        ls -la ./firmware-out
-    - name: Upload Firmware To Release(发布固件)
-      uses: ncipollo/release-action@v1
-      if: needs.Build.outputs.status == 'success'
-      with:
-        tag: JDCloud
-        name: JDCloud
-        allowUpdates: true
-        replacesArtifacts: true
-        artifactErrorsFailBuild: true
-        token: ${{ github.token }}
-        artifacts: |
-          firmware-out/*.bin
-          firmware-out/*.img
-          firmware-out/sha256sums
-          firmware-out/*.config*
-          firmware-out/*.tar.gz
-        body: |
+      - name: Download Firmware Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ env.ARTIFACT_NAME }}
+          path: ./firmware-out
+          extract-here: true
+      - name: Debug list files
+        run: |
+          ls -la ./firmware-out
+      - name: Upload Firmware To Release(发布固件)
+        uses: ncipollo/release-action@v1
+        if: ${{ needs.Build.result == 'success' }}
+        with:
+          tag: JDCloud
+          name: JDCloud
+          allowUpdates: true
+          replacesArtifacts: true
+          artifactErrorsFailBuild: true
+          token: ${{ github.token }}
+          artifacts: |
+            firmware-out/*.bin
+            firmware-out/*.img
+            firmware-out/sha256sums
+            firmware-out/*.config*
+            firmware-out/*.tar.gz
+          body: |
             **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
             ### 📒 固件信息
             - ${{ inputs.release_summary }}
