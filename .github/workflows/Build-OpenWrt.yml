@@ -447,11 +447,12 @@ jobs:
           artifactErrorsFailBuild: true
           token: ${{ github.token }}
           artifacts: |
-            firmware-out/*.bin
-            firmware-out/*.img
-            firmware-out/sha256sums
-            firmware-out/*.config*
-            firmware-out/*.tar.gz
+            firmware-out/firmware-JDCloud/*.bin
+            firmware-out/firmware-JDCloud/*.img
+            firmware-out/firmware-JDCloud/sha256sums
+            firmware-out/firmware-JDCloud/*.config*
+            firmware-out/firmware-JDCloud/*.tar.gz
+
           body: |
             **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
             ### 📒 固件信息
