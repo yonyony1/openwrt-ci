@@ -441,7 +441,7 @@ jobs:
     - name: Upload Firmware To Release(发布固件)
       uses: ncipollo/release-action@v1
       if: needs.Build.outputs.status == 'success'
-         with:
+      with:
         tag: JDCloud
         name: JDCloud
         allowUpdates: true
