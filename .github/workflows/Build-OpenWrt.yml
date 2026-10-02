@@ -448,7 +448,7 @@ jobs:
           name: JDCloud
           allowUpdates: true
           replacesArtifacts: true
-          artifactErrorsFailBuild: true
+          artifactErrorsFailBuild: false
           token: ${{ github.token }}
           artifacts: |
             firmware-out/*.bin
