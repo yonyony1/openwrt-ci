@@ -431,15 +431,16 @@ jobs:
 
     steps:
     - name: Upload Firmware To Release(发布固件)
-      run: |
-        cd ${{ env.FIRMWARE_PATH }}
-        gh release create ${{ inputs.firmware_tag }} \
-          --title "${{ inputs.firmware_tag }}" \
-          --notes "${{ env.RELEASE_BODY }}" \
-          *.bin *.img sha256sums build.config Packages.tar.gz
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-        RELEASE_BODY: |
+     if: steps.compile.outputs.status == 'success'
+     run: |
+       cd ${{ env.FIRMWARE_PATH }}
+       gh release create JDCloud \
+         --title "JDCloud" \
+         --notes "${{ env.RELEASE_BODY }}" \
+         *.bin *.img sha256sums build.config Packages.tar.gz
+     env:
+       GITHUB_TOKEN: ${{ github.token }}
+       RELEASE_BODY: |
           **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
           ### 📒 固件信息
           - ${{ inputs.release_summary }}
