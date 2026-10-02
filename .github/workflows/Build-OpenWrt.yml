@@ -430,23 +430,16 @@ jobs:
       cancel-in-progress: false
 
     steps:
-    - name: Download Firmware Artifact(下载固件产物)
-      uses: actions/download-artifact@v4
-      with:
-        name: ${{ needs.Build.outputs.artifact_name }}
-        path: artifacts/firmware
-
     - name: Upload Firmware To Release(发布固件)
-      uses: ncipollo/release-action@v1
-      with:
-        name: ${{ inputs.firmware_tag }}
-        allowUpdates: true
-        replacesArtifacts: true
-        artifactErrorsFailBuild: true
-        tag: ${{ inputs.firmware_tag }}
-        token: ${{ github.token }}
-        artifacts: artifacts/firmware/*
-        body: |
+      run: |
+        cd ${{ env.FIRMWARE_PATH }}
+        gh release create ${{ inputs.firmware_tag }} \
+          --title "${{ inputs.firmware_tag }}" \
+          --notes "${{ env.RELEASE_BODY }}" \
+          *.bin *.img sha256sums build.config Packages.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        RELEASE_BODY: |
           **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
           ### 📒 固件信息
           - ${{ inputs.release_summary }}
