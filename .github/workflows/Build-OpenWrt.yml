@@ -421,39 +421,40 @@ jobs:
 
   Release:
     runs-on: ubuntu-24.04
-    needs: Build
-    permissions:
-      contents: write
-      actions: read
-    concurrency:
-      group: openwrt-release-${{ github.repository }}-${{ inputs.artifact_prefix }}
-      cancel-in-progress: false
-
-    steps:
-      - name: Download Firmware Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: ${{ env.ARTIFACT_NAME }}
-          path: ./firmware-out
-
-      - name: Upload Firmware To Release(发布固件)
-        uses: ncipollo/release-action@v1
-        if: needs.Build.outputs.status == 'success'
-        with:
-          tag: JDCloud
-          name: JDCloud
-          allowUpdates: true
-          replacesArtifacts: true
-          artifactErrorsFailBuild: true
-          token: ${{ github.token }}
-          artifacts: |
-            firmware-out/firmware-JDCloud/*.bin
-            firmware-out/firmware-JDCloud/*.img
-            firmware-out/firmware-JDCloud/sha256sums
-            firmware-out/firmware-JDCloud/*.config*
-            firmware-out/firmware-JDCloud/*.tar.gz
-
-          body: |
+     needs: Build
+     permissions:
+       contents: write
+       actions: read
+     concurrency:
+       group: openwrt-release-${{ github.repository }}-${{ inputs.artifact_prefix }}
+       cancel-in-progress: false
+  steps:
+    - name: Download Firmware Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: ${{ env.ARTIFACT_NAME }}
+        path: ./firmware-out
+        extract-here: true
+    - name: Debug list files
+      run: |
+        ls -la ./firmware-out
+    - name: Upload Firmware To Release(发布固件)
+      uses: ncipollo/release-action@v1
+      if: needs.Build.outputs.status == 'success'
+         with:
+        tag: JDCloud
+        name: JDCloud
+        allowUpdates: true
+        replacesArtifacts: true
+        artifactErrorsFailBuild: true
+        token: ${{ github.token }}
+        artifacts: |
+          firmware-out/*.bin
+          firmware-out/*.img
+          firmware-out/sha256sums
+          firmware-out/*.config*
+          firmware-out/*.tar.gz
+        body: |
             **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
             ### 📒 固件信息
             - ${{ inputs.release_summary }}
