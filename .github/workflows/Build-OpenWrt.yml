@@ -446,7 +446,12 @@ jobs:
           replacesArtifacts: true
           artifactErrorsFailBuild: true
           token: ${{ github.token }}
-          artifacts: "firmware-out/*"
+          artifacts: |
+            firmware-out/*.bin
+            firmware-out/*.img
+            firmware-out/sha256sums
+            firmware-out/*.config*
+            firmware-out/*.tar.gz
           body: |
             **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
             ### 📒 固件信息
