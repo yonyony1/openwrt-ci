@@ -431,26 +431,30 @@ jobs:
 
     steps:
     - name: Upload Firmware To Release(发布固件)
-     if: steps.compile.outputs.status == 'success'
-     run: |
-       cd ${{ env.FIRMWARE_PATH }}
-       gh release create JDCloud \
-         --title "JDCloud" \
-         --notes "${{ env.RELEASE_BODY }}" \
-         *.bin *.img sha256sums build.config Packages.tar.gz
-     env:
-       GITHUB_TOKEN: ${{ github.token }}
-       RELEASE_BODY: |
-          **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
-          ### 📒 固件信息
-          - ${{ inputs.release_summary }}
-          - 💻 这是 ${{ inputs.firmware_tag }} 平台使用的 OpenWrt 固件
-          - ⚽ 固件源码: ${{ inputs.repo_url }}
-          - 💝 源码分支: ${{ inputs.repo_branch }}
-          - 🌐 默认地址: **${{ inputs.WRT_IP }}**
-          - 🔑 默认root密码: **${{ inputs.WRT_PW }}**
-          ### 🧊 固件版本
-          - 固件内核版本：**${{ needs.Build.outputs.version_kernel }}**
-          - 固件编译前最后一次➦[主源码](${{ inputs.repo_url }})更新记录
-          - ${{ inputs.WRT_SSID }} / ${{ inputs.WRT_WORD }}
-          - ${{ needs.Build.outputs.version_info }}
+      if: steps.compile.outputs.status == 'success'
+      run: |
+        cd ${{ steps.organize.outputs.firmware_path }}
+        echo "当前固件目录: $PWD"
+        ls -la
+        FILE_LIST=$(ls *.bin *.img sha256sums build.config Packages.tar.gz 2>/dev/null)
+        gh release create JDCloud \
+          --update \
+          --title "JDCloud" \
+          --notes "${{ env.RELEASE_BODY }}" \
+          $FILE_LIST
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        RELEASE_BODY: |
+           **This is OpenWrt Firmware for ${{ inputs.firmware_tag }}**
+       ### 📒 固件信息
+       - ${{ inputs.release_summary }}
+       - 💻 这是 ${{ inputs.firmware_tag }} 平台使用的 OpenWrt 固件
+       - ⚽ 固件源码: ${{ inputs.repo_url }}
+       - 💝 源码分支: ${{ inputs.repo_branch }}
+       - 🌐 默认地址: **${{ inputs.WRT_IP }}**
+       - 🔑 默认root密码: **${{ inputs.WRT_PW }}**
+       ### 🧊 固件版本
+       - 固件内核版本：**${{ needs.Build.outputs.version_kernel }}**
+       - 固件编译前最后一次➦[主源码](${{ inputs.repo_url }})更新记录
+       - ${{ inputs.WRT_SSID }} / ${{ inputs.WRT_WORD }}
+       - ${{ needs.Build.outputs.version_info }}
