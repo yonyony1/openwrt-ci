@@ -428,7 +428,7 @@ jobs:
      concurrency:
        group: openwrt-release-${{ github.repository }}-${{ inputs.artifact_prefix }}
        cancel-in-progress: false
-  steps:
+    steps:
     - name: Download Firmware Artifact
       uses: actions/download-artifact@v4
       with:
