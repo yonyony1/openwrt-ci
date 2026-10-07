@@ -327,12 +327,6 @@ fi
 ./scripts/feeds update -i -a
 ./scripts/feeds install -a
 
-# ========== 修复 btop 1.4.7 GCC13 C++23 编译 ==========
-if package_enabled btop; then
-  echo ">> 开启btop的C++23编译参数"
-  sed -i '/PKG_CXXFLAGS/ s/$/ -std=c++23/' feeds/packages/admin/btop/Makefile
-fi
-
 # ========== 【QModem-next 源码拉取】放到 defconfig 之前 ==========
 if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
