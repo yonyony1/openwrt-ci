@@ -332,3 +332,15 @@ if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
   clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
+
+if package_enabled hostapd wpad wpad-full-openssl; then
+  echo ">> Add Build/PostPatch hook to hostapd Makefile"
+  # 防止重复追加 PostPatch
+  if ! grep -q "Build/PostPatch" package/network/services/hostapd/Makefile; then
+   cat >> package/network/services/hostapd/Makefile <<'EOF'
+define Build/PostPatch 	$(SED) '/
+he_mu_edca.he_qos_info/s/^/#/' $(PKG_BUILD_DIR)/src/ap/hostapd.c
+endef
+EOF
+  fi
+fi
