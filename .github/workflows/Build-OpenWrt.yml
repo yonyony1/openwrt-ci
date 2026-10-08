@@ -257,6 +257,28 @@ jobs:
       run: |
         cd "$OPENWRT_PATH"
         ./scripts/feeds update -a
+        ./scripts/feeds install -a
+
+    - name: Inject hostapd he_mu_edca compile fix patch
+      run: |
+        cd "$OPENWRT_PATH"
+        PATCH_DIR="package/network/services/hostapd/patches"
+        mkdir -p "${PATCH_DIR}"
+        cat > "${PATCH_DIR}/001-fix-hostapd-he-mu-edca-without-eht.patch" <<'EOF'
+--- a/src/ap/hostapd.c
++++ b/src/ap/hostapd.c
+@@ -4681,6 +4681,8 @@ static void hostapd_fill_csa_settings(struct hostapd_iface *iface)
+        }
+ 
+        /* MU‑EDCA QoS Info: clear reserved bits */
++#ifdef CONFIG_EHT
+        hapd->iface->conf->he_mu_edca.he_qos_info &= 0xfff0;
++#endif
+ 
+        if (iface->conf->csa_complete_workaround)
+                hapd->csa_complete_workaround = 1;
+EOF
+        echo "✅ 已注入hostapd条件编译修复补丁 001-fix-hostapd-he-mu-edca-without-eht.patch"
 
     - name: Load Custom Configuration(加载自定义配置)
       env:
@@ -335,7 +357,12 @@ jobs:
       run: |
         cd "$OPENWRT_PATH"
         echo -e "$(nproc) thread compile"
-        make -j"$(nproc)" || make -j1 V=s
+        set -o pipefail
+        make -j"$(nproc)" 2>&1 | tee build.log || {
+          echo "Parallel compile failed, retry single thread verbose"
+          make -j1 V=s 2>&1 | tee build.log
+          exit 1
+        }
 
     - name: Check Space Usage(检查空间使用情况 & 列出编译产出)
       if: (!cancelled())
@@ -366,6 +393,7 @@ jobs:
       run: |
         cd "$OPENWRT_PATH"/bin/targets/*/*
         cp "$OPENWRT_PATH/.config" "$ARTIFACT_PREFIX.config"
+        cp "$OPENWRT_PATH/build.log" "$ARTIFACT_PREFIX.build.log"
         mv config.buildinfo "$ARTIFACT_PREFIX.config.buildinfo"
         # ----修改这里：manifest可选，存在才移动，新版不再生成
         if [ -f "$MANIFEST_FILE" ]; then
