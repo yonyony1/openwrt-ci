@@ -332,3 +332,5 @@ if package_enabled luci-app-qmodem-next; then
   rm -rf feeds/luci/applications/luci-app-qmodem-next
   clone_repository https://github.com/FUjr/QModem.git main package/luci-app-qmodem-next
 fi
+
+rm -f package/network/services/hostapd/patches/900-hostapd-update-muedca-params.patch
