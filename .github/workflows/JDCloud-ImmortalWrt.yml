@@ -31,11 +31,11 @@ on:
         required: false
         type: string
       WRT_REPO:
-        required: true
+        required: false
         type: string
         default: https://github.com/yonyony1/LibWrt-laipeng668
       WRT_BRANCH:
-        required: true
+        required: false
         type: string
         default:
   workflow_call:
