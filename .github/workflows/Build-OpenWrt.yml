@@ -333,12 +333,13 @@ jobs:
 
     - name: Create 4G Swap(增加交换分区防止OOM)
       run: |
-        sudo fallocate -l 4G /swapfile
+        sudo dd if=/dev/zero of=/swapfile bs=1M count=6144 status=progress
         sudo chmod 600 /swapfile
         sudo mkswap /swapfile
         sudo swapon /swapfile
-        echo "✅ Swap 4G 已开启"
+        echo "✅ Swap 6G 已开启"
         free -h
+
     - name: Compile Firmware(开始编译固件)
       run: |
         cd "$OPENWRT_PATH"
