@@ -37,7 +37,7 @@ on:
       WRT_BRANCH:
         required: false
         type: string
-        default:
+        default: openwrt-25.12
   workflow_call:
     inputs:
       WRT_CONFIG:
