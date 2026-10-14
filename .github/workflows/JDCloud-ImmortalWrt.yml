@@ -33,7 +33,7 @@ on:
       WRT_REPO:
         required: false
         type: string
-        default: https://github.com/yonyony1/LibWrt-laipeng668
+        default: https://github.com/yonyony1/immortalwrt-laipeng668
       WRT_BRANCH:
         required: false
         type: string
