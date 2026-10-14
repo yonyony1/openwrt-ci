@@ -331,6 +331,14 @@ jobs:
           sleep $((attempt * 5))
         done
 
+    - name: Create 4G Swap(增加交换分区防止OOM)
+      run: |
+        sudo fallocate -l 4G /swapfile
+        sudo chmod 600 /swapfile
+        sudo mkswap /swapfile
+        sudo swapon /swapfile
+        echo "✅ Swap 4G 已开启"
+        free -h
     - name: Compile Firmware(开始编译固件)
       run: |
         cd "$OPENWRT_PATH"
