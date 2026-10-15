@@ -33,11 +33,11 @@ on:
       WRT_REPO:
         required: false
         type: string
-        default: https://github.com/yonyony1/immortalwrt-laipeng668
+        default: https://github.com/yonyony1/immortalwrt-VIKINGYFY
       WRT_BRANCH:
         required: false
         type: string
-        default: openwrt-25.12
+        default: main
   workflow_call:
     inputs:
       WRT_CONFIG:
